@@ -1,0 +1,25 @@
+{
+  "config.pvp_optimize.title": "PvP-Optimize 设置",
+  "config.pvp_optimize.category.particles": "粒子过滤",
+  "config.pvp_optimize.category.culling": "实体剔除",
+  "config.pvp_optimize.category.overlay": "屏幕滤镜",
+
+  "config.pvp_optimize.particlesEnabled": "启用粒子过滤",
+  "config.pvp_optimize.keepCritParticles": "保留暴击粒子 (青色星星)",
+  "config.pvp_optimize.keepDamageParticles": "保留伤害红心 (生物受击)",
+  "config.pvp_optimize.keepPotionParticles": "保留药水粒子",
+  "config.pvp_optimize.keepXpParticles": "保留经验球粒子",
+
+  "config.pvp_optimize.entityCullingEnabled": "启用实体剔除",
+  "config.pvp_optimize.cullDistance": "剔除半径 (格)",
+
+  "config.pvp_optimize.redOverlayEnabled": "启用红色滤镜 (J 切换)",
+  "config.pvp_optimize.overlayColor": "滤镜颜色 (ARGB)",
+  "config.pvp_optimize.overlayOpacity": "滤镜透明度 (0.0 - 1.0)",
+
+  "key.pvp_optimize.open_hud": "打开/关闭状态面板",
+  "key.pvp_optimize.toggle_particles": "切换粒子过滤",
+  "key.pvp_optimize.toggle_cull": "切换实体剔除",
+  "key.pvp_optimize.toggle_red_overlay": "切换红色滤镜",
+  "category.pvp_optimize": "PvP-Optimize"
+}

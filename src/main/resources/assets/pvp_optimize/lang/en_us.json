@@ -1,0 +1,25 @@
+{
+  "config.pvp_optimize.title": "PvP-Optimize Settings",
+  "config.pvp_optimize.category.particles": "Particle Filter",
+  "config.pvp_optimize.category.culling": "Entity Culling",
+  "config.pvp_optimize.category.overlay": "Screen Overlay",
+
+  "config.pvp_optimize.particlesEnabled": "Enable particle filter",
+  "config.pvp_optimize.keepCritParticles": "Keep crit particles (cyan stars)",
+  "config.pvp_optimize.keepDamageParticles": "Keep damage hearts (mob takes hit)",
+  "config.pvp_optimize.keepPotionParticles": "Keep potion particles",
+  "config.pvp_optimize.keepXpParticles": "Keep XP orb particles",
+
+  "config.pvp_optimize.entityCullingEnabled": "Enable entity culling",
+  "config.pvp_optimize.cullDistance": "Cull distance (blocks)",
+
+  "config.pvp_optimize.redOverlayEnabled": "Enable red filter (toggle with J)",
+  "config.pvp_optimize.overlayColor": "Overlay color (ARGB)",
+  "config.pvp_optimize.overlayOpacity": "Overlay opacity (0.0 - 1.0)",
+
+  "key.pvp_optimize.open_hud": "Toggle status panel",
+  "key.pvp_optimize.toggle_particles": "Toggle particle filter",
+  "key.pvp_optimize.toggle_cull": "Toggle entity culling",
+  "key.pvp_optimize.toggle_red_overlay": "Toggle red filter",
+  "category.pvp_optimize": "PvP-Optimize"
+}

@@ -1,0 +1,23 @@
+# Gradle 编译产物
+build/
+.gradle/
+out/
+
+# IDE 配置
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# 本地 jar（从 Modrinth 下载，应当本地装而不是传仓库）
+local-libs/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.log
+
+# Java 编译产物
+*.class

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "pvp_optimize",
+  "version": "${version}",
+  "name": "PvP Optimize",
+  "description": "PVP oriented optimization mod. Block particles, cull far entities, configurable HUD overlay.",
+  "authors": ["you"],
+  "contact": {
+    "homepage": "https://example.com",
+    "sources": "https://example.com"
+  },
+  "license": "MIT",
+  "icon": "assets/pvp_optimize/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.pvp.optimize.PvPOptimize"
+    ],
+    "modmenu": [
+      "com.pvp.optimize.config.PvPOptimizeModMenu"
+    ]
+  },
+  "mixins": [
+    {
+      "config": "pvp_optimize.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.20.6",
+    "java": ">=17",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "modmenu": ">=10.0.0",
+    "cloth-config": ">=14.0.0"
+  }
+}
