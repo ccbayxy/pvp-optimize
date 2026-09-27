@@ -1,7 +1,9 @@
 package com.pvp.optimize.hud;
 
 import com.pvp.optimize.PvPOptimizeConfig;
+import com.pvp.optimize.config.PvPOptimizeConfigScreen.HudPosition;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
@@ -15,33 +17,21 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * 药水时间 HUD (2026-09-27 新增).
+ * 药水时间 HUD (2026-09-27 v5).
  *
- * <p>显示当前玩家所有生效的 {@link StatusEffectInstance}, 在屏幕
- * 右上角绘制一个半透明面板, 每行:</p>
+ * <p>在屏幕一角绘制半透明面板, 每行显示一个生效药水的名称/等级/倒计时.
+ * 全部外观参数 (位置/缩放/背景透明度/颜色) 都通过 ConfigScreen 调整.</p>
  *
  * <pre>
- *   速度 II          01:34   ← 绿色 (BENEFICIAL)
- *   力量             02:15   ← 绿色
- *   挖掘疲劳         00:45   ← 红色 (HARMFUL)
+ *   药水效果 (3)
+ *   速度 II           01:34   ← 绿
+ *   力量              02:15   ← 绿
+ *   挖掘疲劳          00:45   ← 红
  * </pre>
- *
- * <p>格式参考用户提供的 PvP 服务器 "00:57" 倒计时样式. 长效效果
- * (>= 1 小时) 自动切换为 "1:23:45" 格式.</p>
- *
- * <p>受 {@link PvPOptimizeConfig.Data#potionHudEnabled} 控制;
- * 颜色分类由 {@link PvPOptimizeConfig.Data#potionHudColorByCategory} 控制;
- * 最大行数由 {@link PvPOptimizeConfig.Data#potionHudMaxLines} 控制 (0=不限).</p>
  */
 public final class PotionHudRenderer {
 
     private PotionHudRenderer() {}
-
-    private static final int BG_COLOR = 0x90000000;     // ARGB 半透明黑
-    private static final int COLOR_BENEFICIAL = 0xFF55FF55; // 绿
-    private static final int COLOR_HARMFUL    = 0xFFFF5555; // 红
-    private static final int COLOR_NEUTRAL    = 0xFFFFFFFF; // 白
-    private static final int COLOR_TITLE      = 0xFFFFAA00; // 橙 (面板标题)
 
     private static final int PADDING = 4;
     private static final int LINE_HEIGHT = 12;
@@ -51,15 +41,17 @@ public final class PotionHudRenderer {
         if (mc.player == null) return;
 
         PvPOptimizeConfig.Data cfg = PvPOptimizeConfig.get();
+        if (!cfg.potionHudEnabled) return;
 
-        // 收集所有生效效果
         List<StatusEffectInstance> effects = new ArrayList<>(
                 mc.player.getStatusEffects());
 
-        // 无效果则整面板隐藏 (节流, 不浪费 drawText 调用)
-        if (effects.isEmpty()) return;
+        if (effects.isEmpty()) {
+            if (cfg.potionHudHideWhenEmpty) return;
+            // 否则显示空标题: 但用户多半想要默认隐藏, 这里直接退出
+            return;
+        }
 
-        // 排序: BENEFICIAL → NEUTRAL → HARMFUL, 同类按 duration 升序
         effects.sort(Comparator
                 .comparingInt((StatusEffectInstance i) -> categoryOrder(i.getEffectType().value().getCategory()))
                 .thenComparingInt(StatusEffectInstance::getDuration));
@@ -69,48 +61,84 @@ public final class PotionHudRenderer {
             effects = effects.subList(0, maxLines);
         }
 
-        // 构造标题行
-        Text title = Text.literal("§6药水效果 (§l" + effects.size() + "§r§6)");
-        // 构造所有行, 计算最大宽度
+        // 构建行
         List<Line> lines = new ArrayList<>();
-        lines.add(new Line(title, COLOR_TITLE));
-
+        if (cfg.potionHudShowTitle) {
+            lines.add(new Line(
+                    Text.literal("\u00a76\u00a7l药水效果\u00a7r\u00a76 (" + effects.size() + ")"),
+                    cfg.potionHudTitleColor));
+        }
         for (StatusEffectInstance inst : effects) {
             int color = cfg.potionHudColorByCategory
-                    ? colorForCategory(inst.getEffectType().value().getCategory())
-                    : COLOR_NEUTRAL;
+                    ? colorForCategory(inst.getEffectType().value().getCategory(), cfg)
+                    : cfg.potionHudNeutralColor;
 
-            String name = effectName(inst);
-            String amp = ampStr(inst.getAmplifier());
-            String time = formatDuration(inst.getDuration());
-
-            // "速度 II    01:34" —— 中间用空格对齐
-            String body = name + amp + "  " + time;
-            lines.add(new Line(Text.literal(body), color));
+            StringBuilder sb = new StringBuilder();
+            sb.append(effectName(inst));
+            if (cfg.potionHudShowAmplifier) {
+                sb.append(ampStr(inst.getAmplifier()));
+            }
+            if (cfg.potionHudShowDuration) {
+                sb.append("  ").append(formatDuration(inst.getDuration()));
+            }
+            lines.add(new Line(Text.literal(sb.toString()), color));
         }
 
-        // 计算面板尺寸
+        // 计算面板原始尺寸
+        TextRenderer font = mc.textRenderer;
         int textW = 0;
-        for (Line l : lines) {
-            int w = mc.textRenderer.getWidth(l.text);
-            if (w > textW) textW = w;
-        }
+        for (Line l : lines) textW = Math.max(textW, font.getWidth(l.text));
         int panelW = textW + PADDING * 2;
         int panelH = lines.size() * LINE_HEIGHT + PADDING * 2;
 
-        // 屏幕右上角
-        int screenW = mc.getWindow().getScaledWidth();
-        int x = screenW - panelW - SCREEN_MARGIN;
-        int y = SCREEN_MARGIN;
+        // 计算缩放
+        float scale = cfg.potionHudScale / 100.0f;
+        if (scale != 1.0f) {
+            // 缩放: 通过 matrix 实现
+            ctx.getMatrices().push();
+            ctx.getMatrices().scale(scale, scale, 1.0f);
+            renderPanel(ctx, mc, lines, panelW, panelH, scale);
+            ctx.getMatrices().pop();
+        } else {
+            renderPanel(ctx, mc, lines, panelW, panelH, 1.0f);
+        }
+    }
 
-        ctx.fill(x, y, x + panelW, y + panelH, BG_COLOR);
+    private static void renderPanel(DrawContext ctx, MinecraftClient mc,
+                                    List<Line> lines, int panelW, int panelH, float scale) {
+        PvPOptimizeConfig.Data cfg = PvPOptimizeConfig.get();
+
+        int screenW = mc.getWindow().getScaledWidth();
+        int screenH = mc.getWindow().getScaledHeight();
+
+        HudPosition pos;
+        try {
+            pos = HudPosition.valueOf(cfg.potionHudPosition);
+        } catch (IllegalArgumentException e) {
+            pos = HudPosition.TOP_RIGHT;
+        }
+
+        // 屏幕坐标 (scaled). 把边距也按 scale 缩放
+        int scaledMargin = Math.round(SCREEN_MARGIN * scale);
+        int x, y;
+        switch (pos) {
+            case TOP_LEFT -> { x = scaledMargin; y = scaledMargin; }
+            case TOP_RIGHT -> { x = screenW - (int)(panelW * scale) - scaledMargin; y = scaledMargin; }
+            case BOTTOM_LEFT -> { x = scaledMargin; y = screenH - (int)(panelH * scale) - scaledMargin; }
+            case BOTTOM_RIGHT -> { x = screenW - (int)(panelW * scale) - scaledMargin; y = screenH - (int)(panelH * scale) - scaledMargin; }
+            default -> { x = screenW - (int)(panelW * scale) - scaledMargin; y = scaledMargin; }
+        }
+
+        // 背景: 根据 bgOpacity 调整 A
+        int bgColor = (cfg.potionHudBgColor & 0x00FFFFFF)
+                | ((int)(cfg.potionHudBgOpacity * 2.55f) << 24);
+        ctx.fill(x, y, x + (int)(panelW * scale), y + (int)(panelH * scale), bgColor);
 
         for (int i = 0; i < lines.size(); i++) {
             Line l = lines.get(i);
-            ctx.drawText(mc.textRenderer, l.text,
-                    x + PADDING,
-                    y + PADDING + i * LINE_HEIGHT,
-                    l.color, false);
+            int ly = y + Math.round((PADDING + i * LINE_HEIGHT) * scale);
+            int lx = x + Math.round(PADDING * scale);
+            ctx.drawText(mc.textRenderer, l.text, lx, ly, l.color, false);
         }
     }
 
@@ -124,15 +152,14 @@ public final class PotionHudRenderer {
         };
     }
 
-    private static int colorForCategory(StatusEffectCategory c) {
+    private static int colorForCategory(StatusEffectCategory c, PvPOptimizeConfig.Data cfg) {
         return switch (c) {
-            case BENEFICIAL -> COLOR_BENEFICIAL;
-            case HARMFUL -> COLOR_HARMFUL;
-            case NEUTRAL -> COLOR_NEUTRAL;
+            case BENEFICIAL -> cfg.potionHudBeneficialColor;
+            case HARMFUL -> cfg.potionHudHarmfulColor;
+            case NEUTRAL -> cfg.potionHudNeutralColor;
         };
     }
 
-    /** 通过 StatusEffect.getName() 获取本地化文本 (1.20.6 正确 API) */
     private static String effectName(StatusEffectInstance inst) {
         StatusEffect eff = inst.getEffectType().value();
         String translated = eff.getName().getString();
@@ -143,7 +170,6 @@ public final class PotionHudRenderer {
         return translated;
     }
 
-    /** 等级显示: 0 级不显示, 1 级显示 "II", 2 级显示 "III"... */
     private static String ampStr(int amp) {
         if (amp <= 0) return "";
         return switch (amp) {
@@ -155,7 +181,6 @@ public final class PotionHudRenderer {
         };
     }
 
-    /** tick -> "MM:SS" 或 "H:MM:SS". 1 tick = 0.05s. */
     private static String formatDuration(int ticks) {
         int totalSec = ticks / 20;
         if (totalSec < 0) totalSec = 0;

@@ -1,25 +1,58 @@
-﻿{
-  "config.pvp_optimize.title": "PvP-Optimize 设置",
-  "config.pvp_optimize.category.particles": "粒子过滤",
+{
+  "config.pvp_optimize.title": "§b§lPvP-Optimize §r§f设置",
+  "config.pvp_optimize.category.particles": "粒子过滤 (Sodium 风格)",
+  "config.pvp_optimize.category.hud": "HUD 增强 (药水时间)",
   "config.pvp_optimize.category.culling": "实体剔除",
   "config.pvp_optimize.category.overlay": "屏幕滤镜",
 
-  "config.pvp_optimize.particlesEnabled": "启用粒子过滤",
-  "config.pvp_optimize.keepLitParticles": "保留战斗粒子 (暴击/平砍弧光/伤害红心/PvP材质包必备)",
-  "config.pvp_optimize.keepPotionParticles": "保留药水/水花粒子",
-  "config.pvp_optimize.keepXpParticles": "保留经验球粒子",
+  "config.pvp_optimize.particlesEnabled": "启用粒子过滤总开关",
+  "config.pvp_optimize.particlesEnabled.tooltip": "默认关闭. 关闭时本 mod 不会过滤任何粒子, 让 Sodium 或原版渲染器正常工作.\\n打开后, 按下列细类开关筛选.",
+
+  "config.pvp_optimize.particleGroup.combat": "§6战斗粒子",
+  "config.pvp_optimize.particleGroup.world": "§7方块与烟雾",
+  "config.pvp_optimize.particleGroup.combatFx": "§c战斗特效",
+  "config.pvp_optimize.particleGroup.ambient": "§a环境粒子",
+
+  "config.pvp_optimize.particleCombat": "⚔ 暴击 / 横扫 / 烟花火花",
+  "config.pvp_optimize.particleCombat.tooltip": "包括: 暴击星 / 横扫弧光 / 音符盒音符 / 怒村民 / 烟花火花.",
+  "config.pvp_optimize.particleDamage": "♥ 伤害红心",
+  "config.pvp_optimize.particleDamage.tooltip": "生物受击时冒出的红心粒子.",
+
+  "config.pvp_optimize.particleBlock": "▓ 方块破坏/放置",
+  "config.pvp_optimize.particleSmoke": "💨 烟雾 / 篝火",
+
+  "config.pvp_optimize.particleExplosion": "💥 TNT / 苦力怕爆炸",
+  "config.pvp_optimize.particlePotion": "🧪 药水效果 / 喷溅",
+
+  "config.pvp_optimize.particlePortal": "🌀 传送门粒子",
+  "config.pvp_optimize.particleBubble": "○ 水下气泡",
+  "config.pvp_optimize.particleFirework": "🎆 烟花绽放",
+  "config.pvp_optimize.particleFire": "🔥 火把 / 熔炉火焰",
+  "config.pvp_optimize.particleAmbient": "✦ 环境粒子 (伏聆/灰烬)",
+  "config.pvp_optimize.particleExperience": "✦ 经验球",
+
+  "config.pvp_optimize.potionHudEnabled": "显示药水时间面板 (H 切换)",
+  "config.pvp_optimize.potionHudPosition": "面板位置",
+  "config.pvp_optimize.potionHudScale": "面板缩放 (50% - 200%)",
+  "config.pvp_optimize.potionHudMaxLines": "最多显示行数 (0=不限)",
+  "config.pvp_optimize.potionHudHideWhenEmpty": "无效果时自动隐藏",
+  "config.pvp_optimize.potionHudShowTitle": "显示面板标题",
+  "config.pvp_optimize.potionHudShowAmplifier": "显示等级 (II/III...)",
+  "config.pvp_optimize.potionHudShowDuration": "显示剩余时间",
+  "config.pvp_optimize.potionHudColorByCategory": "按效果类型着色",
+  "config.pvp_optimize.potionHudBgColor": "面板背景颜色 (ARGB)",
+  "config.pvp_optimize.potionHudBgOpacity": "背景不透明度 (0-100%)",
+  "config.pvp_optimize.potionHudBeneficialColor": "增益效果颜色 (ARGB)",
+  "config.pvp_optimize.potionHudHarmfulColor": "减益效果颜色 (ARGB)",
+  "config.pvp_optimize.potionHudNeutralColor": "中性效果颜色 (ARGB)",
+  "config.pvp_optimize.potionHudTitleColor": "面板标题颜色 (ARGB)",
 
   "config.pvp_optimize.entityCullingEnabled": "启用实体剔除",
-  "config.pvp_optimize.cullDistance": "剔除半径 (格)",
+  "config.pvp_optimize.cullDistance": "剔除半径 (格) (4 - 64)",
 
   "config.pvp_optimize.redOverlayEnabled": "启用红色滤镜 (J 切换)",
   "config.pvp_optimize.overlayColor": "滤镜颜色 (ARGB)",
-  "config.pvp_optimize.overlayOpacity": "滤镜透明度 (0.0 - 1.0)",
-
-  "config.pvp_optimize.category.hud": "HUD 增强",
-  "config.pvp_optimize.potionHudEnabled": "显示药水时间面板 (H 切换)",
-  "config.pvp_optimize.potionHudColorByCategory": "按效果类型着色 (增益绿/减益红)",
-  "config.pvp_optimize.potionHudMaxLines": "最多显示行数 (0=不限)",
+  "config.pvp_optimize.overlayOpacity": "滤镜不透明度 (0% - 100%)",
 
   "key.pvp_optimize.open_hud": "打开/关闭状态面板",
   "key.pvp_optimize.toggle_particles": "切换粒子过滤",

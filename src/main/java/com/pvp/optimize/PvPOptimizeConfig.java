@@ -17,10 +17,9 @@ import java.nio.file.Path;
 /**
  * Central mod configuration / state holder.
  *
- * The user-tweakable values are stored in {@link Data} and persisted to
- * {@code config/pvp_optimize.json} so they survive game restarts. Keybinds
- * are registered in {@link #register()} which the mod entry point calls
- * from {@code onInitializeClient} (must run before the first tick).
+ * <p>2026-09-27 v5: 拆分为 4 区 (粒子 / HUD / 实体 / 屏幕滤镜), 粒子下细分
+ * 12 类对标 Sodium 的 "粒子渲染模式" 多档分类. 默认 master = false 关闭
+ * 全部过滤 (让 Sodium 接管渲染, 自己只负责 HUD 和配置 UI).</p>
  */
 public final class PvPOptimizeConfig {
 
@@ -28,40 +27,50 @@ public final class PvPOptimizeConfig {
 
     // ============ Persisted data ============
     public static final class Data {
-        public boolean particlesEnabled = true;
 
-        /**
-         * 保留所有 PARTICLE_SHEET_LIT 表粒子 (fix-2026-09-19 v2):
-         *   - SweepAttack (剑横扫弧光 / 平砍粒子)
-         *   - Crit       (暴击星)
-         *   - Damage     (伤害红心)
-         *   - FireworkSpark (烟花)
-         *   - Note       (音符盒音符)
-         *   - AngryVillager
-         * 这些都是 PvP 材质包 (pvp16x / 动态材质) 主要修改的 generic_* 贴图所在表。
-         */
-        public boolean keepLitParticles = true;
+        // ====== 粒子 master (默认关闭) ======
+        /** 总开关. 关 = 不过滤任何粒子 (默认). 开 = 按细类开关筛选. */
+        public boolean particlesEnabled = false;
 
-        public boolean keepPotionParticles = true;
-        public boolean keepXpParticles = true;
+        // ====== 粒子细类 (master 开时生效; 默认全 true 即全放行) ======
+        public boolean particleCombat     = true;
+        public boolean particleDamage     = true;
+        public boolean particleBlock      = true;
+        public boolean particleSmoke      = true;
+        public boolean particleExplosion  = true;
+        public boolean particlePotion     = true;
+        public boolean particlePortal     = true;
+        public boolean particleBubble     = true;
+        public boolean particleFirework   = true;
+        public boolean particleFire       = true;
+        public boolean particleAmbient    = true;
+        public boolean particleExperience = true;
 
-        // 向后兼容: 老字段保留但默认 false (新逻辑下用户用 keepLitParticles 即可)
-        public boolean keepCritParticles = false;
-        public boolean keepDamageParticles = false;
-        public boolean keepSweepParticles = false;
-
+        // ====== 实体剔除 ======
         public boolean entityCullingEnabled = true;
         public double cullDistance = 16.0;
 
-        // 红色滤镜 (red filter / full-screen overlay)
+        // ====== 红色滤镜 ======
         public boolean redOverlayEnabled = true;
-        public int overlayColor = 0x10FF1010;     // ARGB
+        public int overlayColor = 0x10FF1010;
         public float overlayOpacity = 0.15f;
 
-        // ===== 药水时间 HUD (2026-09-27 新增) =====
+        // ====== 药水时间 HUD ======
         public boolean potionHudEnabled = true;
         public boolean potionHudColorByCategory = true;
-        public int potionHudMaxLines = 6;   // 0 = 不限
+        public int potionHudMaxLines = 6;
+        public String potionHudPosition = "TOP_RIGHT";
+        public int potionHudScale = 100;
+        public int potionHudBgOpacity = 90;
+        public int potionHudBgColor = 0x90000000;
+        public int potionHudBeneficialColor = 0xFF55FF55;
+        public int potionHudHarmfulColor = 0xFFFF5555;
+        public int potionHudNeutralColor = 0xFFFFFFFF;
+        public int potionHudTitleColor = 0xFFFFAA00;
+        public boolean potionHudShowTitle = true;
+        public boolean potionHudShowAmplifier = true;
+        public boolean potionHudShowDuration = true;
+        public boolean potionHudHideWhenEmpty = true;
     }
 
     private static final Data DATA = new Data();
@@ -78,24 +87,40 @@ public final class PvPOptimizeConfig {
         }
         try (Reader r = Files.newBufferedReader(CONFIG_PATH)) {
             Data loaded = GSON.fromJson(r, Data.class);
-            if (loaded != null) {
-                DATA.particlesEnabled = loaded.particlesEnabled;
-                DATA.keepLitParticles = loaded.keepLitParticles;
-                DATA.keepPotionParticles = loaded.keepPotionParticles;
-                DATA.keepXpParticles = loaded.keepXpParticles;
-                // 老字段如果存在则读, 否则使用默认值 (false)
-                DATA.keepCritParticles = loaded.keepCritParticles;
-                DATA.keepDamageParticles = loaded.keepDamageParticles;
-                DATA.keepSweepParticles = loaded.keepSweepParticles;
-                DATA.entityCullingEnabled = loaded.entityCullingEnabled;
-                DATA.cullDistance = loaded.cullDistance;
-                DATA.redOverlayEnabled = loaded.redOverlayEnabled;
-                DATA.overlayColor = loaded.overlayColor;
-                DATA.overlayOpacity = loaded.overlayOpacity;
-                DATA.potionHudEnabled = loaded.potionHudEnabled;
-                DATA.potionHudColorByCategory = loaded.potionHudColorByCategory;
-                DATA.potionHudMaxLines = loaded.potionHudMaxLines;
-            }
+            if (loaded == null) return;
+            DATA.particlesEnabled    = loaded.particlesEnabled;
+            DATA.particleCombat      = loaded.particleCombat;
+            DATA.particleDamage      = loaded.particleDamage;
+            DATA.particleBlock       = loaded.particleBlock;
+            DATA.particleSmoke       = loaded.particleSmoke;
+            DATA.particleExplosion   = loaded.particleExplosion;
+            DATA.particlePotion      = loaded.particlePotion;
+            DATA.particlePortal      = loaded.particlePortal;
+            DATA.particleBubble      = loaded.particleBubble;
+            DATA.particleFirework    = loaded.particleFirework;
+            DATA.particleFire        = loaded.particleFire;
+            DATA.particleAmbient     = loaded.particleAmbient;
+            DATA.particleExperience  = loaded.particleExperience;
+            DATA.entityCullingEnabled = loaded.entityCullingEnabled;
+            DATA.cullDistance         = loaded.cullDistance;
+            DATA.redOverlayEnabled    = loaded.redOverlayEnabled;
+            DATA.overlayColor         = loaded.overlayColor;
+            DATA.overlayOpacity       = loaded.overlayOpacity;
+            DATA.potionHudEnabled         = loaded.potionHudEnabled;
+            DATA.potionHudColorByCategory = loaded.potionHudColorByCategory;
+            DATA.potionHudMaxLines        = loaded.potionHudMaxLines;
+            DATA.potionHudPosition        = loaded.potionHudPosition != null ? loaded.potionHudPosition : "TOP_RIGHT";
+            DATA.potionHudScale           = loaded.potionHudScale > 0 ? loaded.potionHudScale : 100;
+            DATA.potionHudBgOpacity       = loaded.potionHudBgOpacity;
+            DATA.potionHudBgColor         = loaded.potionHudBgColor;
+            DATA.potionHudBeneficialColor = loaded.potionHudBeneficialColor;
+            DATA.potionHudHarmfulColor    = loaded.potionHudHarmfulColor;
+            DATA.potionHudNeutralColor    = loaded.potionHudNeutralColor;
+            DATA.potionHudTitleColor      = loaded.potionHudTitleColor;
+            DATA.potionHudShowTitle       = loaded.potionHudShowTitle;
+            DATA.potionHudShowAmplifier   = loaded.potionHudShowAmplifier;
+            DATA.potionHudShowDuration    = loaded.potionHudShowDuration;
+            DATA.potionHudHideWhenEmpty   = loaded.potionHudHideWhenEmpty;
         } catch (IOException e) {
             PvPOptimize.LOGGER.warn("[PvP-Optimize] Failed to read config, using defaults", e);
         }
@@ -128,7 +153,6 @@ public final class PvPOptimizeConfig {
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_K,
             "category.pvp_optimize");
-    /** 红色滤镜开关 (J) */
     public static final KeyBinding TOGGLE_RED_OVERLAY = new KeyBinding(
             "key.pvp_optimize.toggle_red_overlay",
             InputUtil.Type.KEYSYM,

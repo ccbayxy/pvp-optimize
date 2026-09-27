@@ -62,15 +62,16 @@ public final class OverlayHud {
 
         Text[] lines = {
                 Text.literal("PvP-Optimize"),
-                Text.literal("粒子: " + onOff(cfg.particlesEnabled)
-                        + "  (暴击=" + onOff(cfg.keepCritParticles)
-                        + " 受击=" + onOff(cfg.keepDamageParticles)
-                        + " 药水=" + onOff(cfg.keepPotionParticles)
-                        + " 经验=" + onOff(cfg.keepXpParticles) + ")"),
-                Text.literal("实体剔除: " + onOff(cfg.entityCullingEnabled)
-                        + "  半径=" + ((int) cfg.cullDistance) + "格"),
+                Text.literal("§e粒子过滤§r master: " + onOff(cfg.particlesEnabled)
+                        + "  §a战斗§r=" + onOff(cfg.particleCombat)
+                        + " §c伤害§r=" + onOff(cfg.particleDamage)
+                        + " §b药水§r=" + onOff(cfg.particlePotion)
+                        + " §6火焰§r=" + onOff(cfg.particleFire) + ")"),
+                Text.literal("\u00a7e\u5b9e\u4f53\u5256\u9664\u00a7r: " + onOff(cfg.entityCullingEnabled)
+                        + "  §7半径=" + ((int) cfg.cullDistance) + "格"),
+                Text.literal("\u00a7e\u836f\u6c34 HUD\u00a7r: " + onOff(cfg.potionHudEnabled) + "  \u00a77\u4f4d\u7f6e=" + cfg.potionHudPosition + " \u7f29\u653e=" + cfg.potionHudScale + "%"),
                 Text.literal("红色滤镜: " + onOff(cfg.redOverlayEnabled)
-                        + "  透明度=" + String.format("%.2f", cfg.overlayOpacity)),
+                        + "  \u00a77\u900f\u660e\u5ea6=" + String.format("%.0f%%", cfg.overlayOpacity * 100)),
         };
 
         int width = 0;
