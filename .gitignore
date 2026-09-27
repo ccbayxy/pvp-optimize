@@ -21,3 +21,14 @@ Thumbs.db
 
 # Java 编译产物
 *.class
+
+# 调试/备份/计划文件 (2026-09-27 清理)
+backup_fix_*/
+.trae/
+Inspect.java
+Ex.java
+EAll.java
+VJar.java
+*.PNG
+"[1.20.5-1.20.6]*
+"*.zip

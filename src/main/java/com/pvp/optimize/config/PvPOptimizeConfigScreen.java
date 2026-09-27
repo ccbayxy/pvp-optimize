@@ -41,17 +41,10 @@ public final class PvPOptimizeConfigScreen {
                 .build());
 
         particles.addEntry(eb.startBooleanToggle(
-                        Text.translatable("config.pvp_optimize.keepCritParticles"),
-                        data.keepCritParticles)
+                        Text.translatable("config.pvp_optimize.keepLitParticles"),
+                        data.keepLitParticles)
                 .setDefaultValue(true)
-                .setSaveConsumer(v -> data.keepCritParticles = v)
-                .build());
-
-        particles.addEntry(eb.startBooleanToggle(
-                        Text.translatable("config.pvp_optimize.keepDamageParticles"),
-                        data.keepDamageParticles)
-                .setDefaultValue(true)
-                .setSaveConsumer(v -> data.keepDamageParticles = v)
+                .setSaveConsumer(v -> data.keepLitParticles = v)
                 .build());
 
         particles.addEntry(eb.startBooleanToggle(
@@ -111,6 +104,33 @@ public final class PvPOptimizeConfigScreen {
                 .setDefaultValue(0.15f)
                 .setMin(0.0f).setMax(1.0f)
                 .setSaveConsumer(v -> data.overlayOpacity = v)
+                .build());
+
+
+        // ============== HUD 增强 (2026-09-27 新增) ==============
+        ConfigCategory hud = builder.getOrCreateCategory(
+                Text.translatable("config.pvp_optimize.category.hud"));
+
+        hud.addEntry(eb.startBooleanToggle(
+                        Text.translatable("config.pvp_optimize.potionHudEnabled"),
+                        data.potionHudEnabled)
+                .setDefaultValue(true)
+                .setSaveConsumer(v -> data.potionHudEnabled = v)
+                .build());
+
+        hud.addEntry(eb.startBooleanToggle(
+                        Text.translatable("config.pvp_optimize.potionHudColorByCategory"),
+                        data.potionHudColorByCategory)
+                .setDefaultValue(true)
+                .setSaveConsumer(v -> data.potionHudColorByCategory = v)
+                .build());
+
+        hud.addEntry(eb.startIntField(
+                        Text.translatable("config.pvp_optimize.potionHudMaxLines"),
+                        data.potionHudMaxLines)
+                .setDefaultValue(6)
+                .setMin(0).setMax(20)
+                .setSaveConsumer(v -> data.potionHudMaxLines = v)
                 .build());
 
         builder.setSavingRunnable(PvPOptimizeConfig::save);

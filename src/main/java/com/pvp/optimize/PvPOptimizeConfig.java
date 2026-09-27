@@ -29,10 +29,26 @@ public final class PvPOptimizeConfig {
     // ============ Persisted data ============
     public static final class Data {
         public boolean particlesEnabled = true;
-        public boolean keepCritParticles = true;
-        public boolean keepDamageParticles = true;
+
+        /**
+         * 保留所有 PARTICLE_SHEET_LIT 表粒子 (fix-2026-09-19 v2):
+         *   - SweepAttack (剑横扫弧光 / 平砍粒子)
+         *   - Crit       (暴击星)
+         *   - Damage     (伤害红心)
+         *   - FireworkSpark (烟花)
+         *   - Note       (音符盒音符)
+         *   - AngryVillager
+         * 这些都是 PvP 材质包 (pvp16x / 动态材质) 主要修改的 generic_* 贴图所在表。
+         */
+        public boolean keepLitParticles = true;
+
         public boolean keepPotionParticles = true;
         public boolean keepXpParticles = true;
+
+        // 向后兼容: 老字段保留但默认 false (新逻辑下用户用 keepLitParticles 即可)
+        public boolean keepCritParticles = false;
+        public boolean keepDamageParticles = false;
+        public boolean keepSweepParticles = false;
 
         public boolean entityCullingEnabled = true;
         public double cullDistance = 16.0;
@@ -41,6 +57,11 @@ public final class PvPOptimizeConfig {
         public boolean redOverlayEnabled = true;
         public int overlayColor = 0x10FF1010;     // ARGB
         public float overlayOpacity = 0.15f;
+
+        // ===== 药水时间 HUD (2026-09-27 新增) =====
+        public boolean potionHudEnabled = true;
+        public boolean potionHudColorByCategory = true;
+        public int potionHudMaxLines = 6;   // 0 = 不限
     }
 
     private static final Data DATA = new Data();
@@ -52,22 +73,28 @@ public final class PvPOptimizeConfig {
 
     public static void load() {
         if (!Files.exists(CONFIG_PATH)) {
-            save(); // first run: write defaults
+            save();
             return;
         }
         try (Reader r = Files.newBufferedReader(CONFIG_PATH)) {
             Data loaded = GSON.fromJson(r, Data.class);
             if (loaded != null) {
                 DATA.particlesEnabled = loaded.particlesEnabled;
-                DATA.keepCritParticles = loaded.keepCritParticles;
-            DATA.keepDamageParticles = loaded.keepDamageParticles;
+                DATA.keepLitParticles = loaded.keepLitParticles;
                 DATA.keepPotionParticles = loaded.keepPotionParticles;
                 DATA.keepXpParticles = loaded.keepXpParticles;
+                // 老字段如果存在则读, 否则使用默认值 (false)
+                DATA.keepCritParticles = loaded.keepCritParticles;
+                DATA.keepDamageParticles = loaded.keepDamageParticles;
+                DATA.keepSweepParticles = loaded.keepSweepParticles;
                 DATA.entityCullingEnabled = loaded.entityCullingEnabled;
                 DATA.cullDistance = loaded.cullDistance;
                 DATA.redOverlayEnabled = loaded.redOverlayEnabled;
                 DATA.overlayColor = loaded.overlayColor;
                 DATA.overlayOpacity = loaded.overlayOpacity;
+                DATA.potionHudEnabled = loaded.potionHudEnabled;
+                DATA.potionHudColorByCategory = loaded.potionHudColorByCategory;
+                DATA.potionHudMaxLines = loaded.potionHudMaxLines;
             }
         } catch (IOException e) {
             PvPOptimize.LOGGER.warn("[PvP-Optimize] Failed to read config, using defaults", e);

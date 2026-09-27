@@ -41,7 +41,7 @@ public final class OverlayHud {
 
         PvPOptimizeConfig.Data cfg = PvPOptimizeConfig.get();
 
-        // 1. Full-screen red filter (红色滤镜)
+        // 1. Full-screen red filter (红色滤镜) —— 总是渲染, 不受 hudVisible 控制
         if (cfg.redOverlayEnabled) {
             int w = mc.getWindow().getScaledWidth();
             int h = mc.getWindow().getScaledHeight();
@@ -51,8 +51,10 @@ public final class OverlayHud {
             ctx.fill(0, 0, w, h, argb);
         }
 
-        // 2. Status panel
+        // H 关闭整个 HUD 群组 (状态面板 + 药水时间)
         if (!hudVisible) return;
+
+        // 2. 状态面板 (左上)
         int x = 4;
         int y = 4;
         int lineHeight = 12;
@@ -81,6 +83,11 @@ public final class OverlayHud {
         ctx.fill(x, y, x + width + padding * 2, y + boxH, 0x90000000);
         for (int i = 0; i < lines.length; i++) {
             ctx.drawText(mc.textRenderer, lines[i], x + padding, y + padding + i * lineHeight, 0xFFFFFFFF, false);
+        }
+
+        // 3. 药水时间面板 (右上) —— 同一 H 键控制
+        if (cfg.potionHudEnabled) {
+            PotionHudRenderer.render(ctx, mc);
         }
     }
 
