@@ -4,139 +4,125 @@ import com.pvp.optimize.PvPOptimizeConfig;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.SpriteBillboardParticle;
 import net.minecraft.client.texture.Sprite;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.projectile.ArrowEntity;
-import net.minecraft.entity.projectile.thrown.EnderPearlEntity;
-import net.minecraft.entity.projectile.thrown.ExperienceBottleEntity;
-import net.minecraft.entity.projectile.thrown.PotionEntity;
-import net.minecraft.entity.projectile.thrown.SnowballEntity;
 
 import java.lang.reflect.Field;
 
 /**
- * 粒子过滤 v1.0.2 修复版
+ * 粒子过滤 v1.0.5
  *
- * 1.20.6 Mojang 混淆后, {@code particle.getClass().getName()} 返回的是
- * 默认包路径下的短类名（如 "gae"、"fzv"），yarn 名字 ("CritParticle"、
- * "DamageParticle") 运行时根本拿不到。因此旧版基于子串匹配 ("critparticle"
- * 等) 的过滤逻辑运行时永远不命中。
+ * Fabric Loader 默认使用 intermediary 命名空间, 运行时 particle.getClass().getName()
+ * 返回的是 "net.minecraft.class_657" 这种形式, 而不是 yarn 名 ("DamageParticle")
+ * 或 Mojang 混淆短名 ("gae")。本实现以 intermediary 名为准做匹配, 同时 fallback
+ * 检查 yarn 命名, 兼容不同运行环境。
  *
- * 本实现改用反射 + Class.forName() 解析具体类, 并配合 Sprite 纹理
- * (critical_hit / damage / note / sweep) 作为兜底识别, 确保 PvP 场景里
- * 暴击星、伤害红心、药水效果、经验球、附魔命中粒子能正常显示。
+ * 任何无法识别的粒子都过滤掉, 这是 PvP 优化 mod 需要的"少粒子"行为。
  */
 public final class ParticleFilter {
 
     private ParticleFilter() {}
 
-    // ===== 缓存通过 Class.forName 解析出的目标 Class 对象 =====
-    // 在 1.20.6 yarn 中：
-    //   DamageParticle          = gae
-    //   SweepAttackParticle     = fzv
-    //   NoteParticle            = gbd
-    //   SpellParticle (附魔/暴击) = gbw
-    //   SonicBoomParticle       = gbu
-    //   PortalParticle          = gbk
-    //   FlameParticle           = gap
-    private static Class<?> DAMAGE_PARTICLE_CLS;
-    private static Class<?> SWEEP_PARTICLE_CLS;
-    private static Class<?> NOTE_PARTICLE_CLS;
-    private static Class<?> SPELL_PARTICLE_CLS;
-    private static Class<?> SONIC_BOOM_CLS;
-    private static Class<?> FLAME_PARTICLE_CLS;
-    private static Class<?> PORTAL_PARTICLE_CLS;
-    private static boolean RESOLVED = false;
+    // ===== intermediary 命名空间 (Fabric 默认) =====
+    public static final String DAMAGE_PARTICLE_INTERMEDIARY   = "net.minecraft.class_657";   // DamageParticle
+    public static final String SWEEP_PARTICLE_INTERMEDIARY    = "net.minecraft.class_645";   // SweepAttackParticle
+    public static final String NOTE_PARTICLE_INTERMEDIARY     = "net.minecraft.class_698";   // NoteParticle
+    public static final String SPELL_PARTICLE_INTERMEDIARY    = "net.minecraft.class_711";   // SpellParticle
+    public static final String SONIC_BOOM_PARTICLE_INTERMEDIARY = "net.minecraft.class_7452"; // SonicBoomParticle
 
-    private static synchronized void resolveClasses() {
-        if (RESOLVED) return;
-        RESOLVED = true;
-        DAMAGE_PARTICLE_CLS   = tryResolve("gae");
-        SWEEP_PARTICLE_CLS    = tryResolve("fzv");
-        NOTE_PARTICLE_CLS     = tryResolve("gbd");
-        SPELL_PARTICLE_CLS    = tryResolve("gbw");
-        SONIC_BOOM_CLS        = tryResolve("gbu");
-        FLAME_PARTICLE_CLS    = tryResolve("gap");
-        PORTAL_PARTICLE_CLS   = tryResolve("gbk");
+    // ===== yarn 命名空间 (loom 编译期/部分运行环境) =====
+    public static final String DAMAGE_PARTICLE_YARN   = "net.minecraft.client.particle.DamageParticle";
+    public static final String SWEEP_PARTICLE_YARN    = "net.minecraft.client.particle.SweepAttackParticle";
+    public static final String NOTE_PARTICLE_YARN     = "net.minecraft.client.particle.NoteParticle";
+    public static final String SPELL_PARTICLE_YARN    = "net.minecraft.client.particle.SpellParticle";
+
+    // ===== Sprite 反射缓存 =====
+    private static volatile Field SPRITE_FIELD;
+    private static volatile boolean SPRITE_FIELD_RESOLVED = false;
+
+    private static Field spriteField() {
+        if (SPRITE_FIELD_RESOLVED) return SPRITE_FIELD;
+        synchronized (ParticleFilter.class) {
+            if (SPRITE_FIELD_RESOLVED) return SPRITE_FIELD;
+            try {
+                Field f = SpriteBillboardParticle.class.getDeclaredField("sprite");
+                f.setAccessible(true);
+                SPRITE_FIELD = f;
+            } catch (Throwable t) {
+                SPRITE_FIELD = null;
+            }
+            SPRITE_FIELD_RESOLVED = true;
+        }
+        return SPRITE_FIELD;
     }
 
-    private static Class<?> tryResolve(String name) {
+    public static String tryGetSpriteId(Particle particle) {
         try {
-            return Class.forName(name);
+            Field f = spriteField();
+            if (f == null) return null;
+            if (!(particle instanceof SpriteBillboardParticle sbp)) return null;
+            Sprite sprite = (Sprite) f.get(sbp);
+            if (sprite == null) return null;
+            return sprite.getAtlasId().toString();
         } catch (Throwable t) {
             return null;
         }
     }
 
     /**
-     * 提取 Sprite 资源 ID (例如 "minecraft:critical_hit"), 用于在
-     * 1.20.6 没有 CritParticle 类的情况下, 仍能识别暴击粒子。
+     * 是否应当保留这个粒子 (返回 true 则渲染)。
+     *
+     * 策略 — 命中以下任一规则则保留:
+     *   - 伤害红心 (DamageParticle)
+     *   - 横扫弧光 (SweepAttackParticle)
+     *   - 音符 (NoteParticle)
+     *   - SpellParticle 中 critical_hit (暴击星) / effect (药效果) / enchant (附魔命中) 纹理
+     *   - SonicBoomParticle ( Warden 冲击波, PvP 也常见)
+     *
+     * 其余全部过滤。
      */
-    private static String tryGetSpriteId(Particle particle) {
-        if (!(particle instanceof SpriteBillboardParticle sbp)) return null;
-        try {
-            Field f = SpriteBillboardParticle.class.getDeclaredField("sprite");
-            f.setAccessible(true);
-            Sprite sprite = (Sprite) f.get(sbp);
-            if (sprite == null) return null;
-            return sprite.getAtlasId().toString();
-        } catch (Throwable ignored) {
-            return null;
-        }
-    }
+    public static boolean shouldKeep(Particle particle) {
+        if (particle == null) return false;
 
-    public static boolean shouldRender(Particle particle) {
+        // 总开关关闭 -> 全部放行, 不过滤任何粒子
         PvPOptimizeConfig.Data cfg = PvPOptimizeConfig.get();
         if (!cfg.particlesEnabled) return true;
 
-        resolveClasses();
+        try {
+            String name = particle.getClass().getName();
 
-        // 1) 暴击星 (蓝/青色星星 - 暴击时出现)
-        //    1.20.6 中 CritParticle 类已被移除, 改为使用 SpellParticle (gbw)
-        //    + critical_hit 纹理渲染
-        if (SPELL_PARTICLE_CLS != null && SPELL_PARTICLE_CLS.isInstance(particle)) {
-            String spriteId = tryGetSpriteId(particle);
-            if (spriteId != null && spriteId.contains("critical_hit")) {
+            // 1) 伤害红心 - DamageParticle
+            if (name.equals(DAMAGE_PARTICLE_INTERMEDIARY) || name.equals(DAMAGE_PARTICLE_YARN)) {
+                return cfg.keepDamageParticles;
+            }
+
+            // 2) 横扫弧光 - SweepAttackParticle (与"保留暴击粒子"开关联动)
+            if (name.equals(SWEEP_PARTICLE_INTERMEDIARY) || name.equals(SWEEP_PARTICLE_YARN)) {
                 return cfg.keepCritParticles;
             }
-        }
 
-        // 2) 伤害红心 (DamageParticle / gae) - 受击飞出的红心
-        if (DAMAGE_PARTICLE_CLS != null && DAMAGE_PARTICLE_CLS.isInstance(particle)) {
-            return cfg.keepDamageParticles;
-        }
-
-        // 3) 药水效果粒子 - 围绕实体的光环 (SpellParticle + effect/mob_effect 纹理)
-        if (SPELL_PARTICLE_CLS != null && SPELL_PARTICLE_CLS.isInstance(particle)) {
-            String spriteId = tryGetSpriteId(particle);
-            if (spriteId != null && (spriteId.contains("effect") || spriteId.contains("mob_effect"))) {
-                return cfg.keepPotionParticles;
+            // 3) 音符 - NoteParticle (经验球附近)
+            if (name.equals(NOTE_PARTICLE_INTERMEDIARY) || name.equals(NOTE_PARTICLE_YARN)) {
+                return cfg.keepXpParticles;
             }
+
+            // 4) SpellParticle - 暴击星 / 药效果 / 附魔命中 / 环境效果都通过这里渲染
+            //    在 1.20.6 中药水效果粒子的 Sprite ID 不一定含 effect/mob_effect 字串,
+            //    直接全部保留以确保 PvP 场景下所有状态可视粒子都能正常显示。
+            if (name.equals(SPELL_PARTICLE_INTERMEDIARY) || name.equals(SPELL_PARTICLE_YARN)) {
+                // SpellParticle 同时承载暴击星 + 药效果两类 PvP 粒子,
+                // 默认放行 (PvP 友好). 关闭任何一个开关联动时也保留, 避免误判.
+                return cfg.keepCritParticles || cfg.keepPotionParticles;
+            }
+
+            // 5) SonicBoom 冲击波 (PvP 也常见)
+            if (name.equals(SONIC_BOOM_PARTICLE_INTERMEDIARY)) {
+                return true;
+            }
+
+            // 其余全部过滤
+            return false;
+        } catch (Throwable t) {
+            // 任何异常一律过滤 (安全默认, 减少粒子)
+            return false;
         }
-
-        // 4) 经验球音符粒子 (NoteParticle / gbd) - 经验球附近漂浮的音符
-        if (NOTE_PARTICLE_CLS != null && NOTE_PARTICLE_CLS.isInstance(particle)) {
-            return cfg.keepXpParticles;
-        }
-
-        // 5) 横扫弧光 (SweepAttackParticle / fzv) - 剑的横扫特效, 与"保留暴击粒子"开关联动
-        if (SWEEP_PARTICLE_CLS != null && SWEEP_PARTICLE_CLS.isInstance(particle)) {
-            return cfg.keepCritParticles;
-        }
-
-        // 其余全部屏蔽
-        return false;
-    }
-
-    public static boolean shouldRender(Particle particle, Entity source) {
-        if (shouldRender(particle)) return true;
-        if (source == null) return false;
-
-        if (source instanceof EnderPearlEntity) return true;
-        if (source instanceof SnowballEntity)   return true;
-        if (source instanceof PotionEntity)     return true;
-        if (source instanceof ExperienceBottleEntity) return true;
-        if (source instanceof ArrowEntity)      return true;
-
-        return false;
     }
 }
