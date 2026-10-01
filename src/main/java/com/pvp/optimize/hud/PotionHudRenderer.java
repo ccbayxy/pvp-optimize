@@ -20,7 +20,7 @@ import java.util.List;
  * 药水时间 HUD (2026-09-27 v5).
  *
  * <p>在屏幕一角绘制半透明面板, 每行显示一个生效药水的名称/等级/倒计时.
- * 全部外观参数 (位置/缩放/背景透明度/颜色) 都通过 ConfigScreen 调整.</p>
+ * showing the active effect name, level, and remaining duration.
  *
  * <pre>
  *   药水效果 (3)
@@ -48,7 +48,7 @@ public final class PotionHudRenderer {
 
         if (effects.isEmpty()) {
             if (cfg.potionHudHideWhenEmpty) return;
-            // 否则显示空标题: 但用户多半想要默认隐藏, 这里直接退出
+            // Otherwise show empty title: user likely wants default hide, just exit
             return;
         }
 
@@ -65,7 +65,7 @@ public final class PotionHudRenderer {
         List<Line> lines = new ArrayList<>();
         if (cfg.potionHudShowTitle) {
             lines.add(new Line(
-                    Text.literal("\u00a76\u00a7l药水效果\u00a7r\u00a76 (" + effects.size() + ")"),
+                    Text.literal("\u00a76\u00a7l\u836f\u6c34\u6548\u679c\u00a7r\u00a76 (" + effects.size() + ")"),
                     cfg.potionHudTitleColor));
         }
         for (StatusEffectInstance inst : effects) {

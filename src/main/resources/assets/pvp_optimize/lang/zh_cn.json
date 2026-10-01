@@ -1,37 +1,29 @@
-{
+﻿{
   "config.pvp_optimize.title": "§b§lPvP-Optimize §r§f设置",
-  "config.pvp_optimize.category.particles": "粒子过滤 (Sodium 风格)",
+  "config.pvp_optimize.category.particles": "粒子过滤 (master + 13 细类)",
   "config.pvp_optimize.category.hud": "HUD 增强 (药水时间)",
   "config.pvp_optimize.category.culling": "实体剔除",
   "config.pvp_optimize.category.overlay": "屏幕滤镜",
+  "config.pvp_optimize.category.player":   "玩家渲染",
 
-  "config.pvp_optimize.particlesEnabled": "启用粒子过滤总开关",
-  "config.pvp_optimize.particlesEnabled.tooltip": "默认关闭. 关闭时本 mod 不会过滤任何粒子, 让 Sodium 或原版渲染器正常工作.\\n打开后, 按下列细类开关筛选.",
+  "config.pvp_optimize.particlesEnabled": "启用粒子过滤 (master)",
 
-  "config.pvp_optimize.particleGroup.combat": "§6战斗粒子",
-  "config.pvp_optimize.particleGroup.world": "§7方块与烟雾",
-  "config.pvp_optimize.particleGroup.combatFx": "§c战斗特效",
-  "config.pvp_optimize.particleGroup.ambient": "§a环境粒子",
+  "config.pvp_optimize.keepCritParticles":      "保留: 暴击星",
+  "config.pvp_optimize.keepSweepParticles":     "保留: 剑横扫",
+  "config.pvp_optimize.keepDamageParticles":    "保留: 伤害红心",
+  "config.pvp_optimize.keepFireworkParticles":  "保留: 烟花",
+  "config.pvp_optimize.keepNoteParticles":      "保留: 音符盒",
+  "config.pvp_optimize.keepXpParticles":        "保留: 经验球",
+  "config.pvp_optimize.keepPotionParticles":    "保留: 药水气泡",
+  "config.pvp_optimize.keepPortalParticles":    "保留: 传送门",
+  "config.pvp_optimize.keepFireParticles":      "保留: 火焰/岩浆/熔炉",
+  "config.pvp_optimize.keepExplosionParticles": "保留: 爆炸",
+  "config.pvp_optimize.keepBlockParticles":     "保留: 方块挖掘/灰尘",
+  "config.pvp_optimize.keepBubbleParticles":    "保留: 水/气泡",
+  "config.pvp_optimize.keepSmokeParticles":     "保留: 烟雾",
+  "config.pvp_optimize.keepDragonParticles":    "保留: 末影龙/神秘粒子",
 
-  "config.pvp_optimize.particleCombat": "⚔ 暴击 / 横扫 / 烟花火花",
-  "config.pvp_optimize.particleCombat.tooltip": "包括: 暴击星 / 横扫弧光 / 音符盒音符 / 怒村民 / 烟花火花.",
-  "config.pvp_optimize.particleDamage": "♥ 伤害红心",
-  "config.pvp_optimize.particleDamage.tooltip": "生物受击时冒出的红心粒子.",
-
-  "config.pvp_optimize.particleBlock": "▓ 方块破坏/放置",
-  "config.pvp_optimize.particleSmoke": "💨 烟雾 / 篝火",
-
-  "config.pvp_optimize.particleExplosion": "💥 TNT / 苦力怕爆炸",
-  "config.pvp_optimize.particlePotion": "🧪 药水效果 / 喷溅",
-
-  "config.pvp_optimize.particlePortal": "🌀 传送门粒子",
-  "config.pvp_optimize.particleBubble": "○ 水下气泡",
-  "config.pvp_optimize.particleFirework": "🎆 烟花绽放",
-  "config.pvp_optimize.particleFire": "🔥 火把 / 熔炉火焰",
-  "config.pvp_optimize.particleAmbient": "✦ 环境粒子 (伏聆/灰烬)",
-  "config.pvp_optimize.particleExperience": "✦ 经验球",
-
-  "config.pvp_optimize.potionHudEnabled": "显示药水时间面板 (H 切换)",
+  "config.pvp_optimize.potionHudEnabled": "显示药水时间面板",
   "config.pvp_optimize.potionHudPosition": "面板位置",
   "config.pvp_optimize.potionHudScale": "面板缩放 (50% - 200%)",
   "config.pvp_optimize.potionHudMaxLines": "最多显示行数 (0=不限)",
@@ -53,6 +45,12 @@
   "config.pvp_optimize.redOverlayEnabled": "启用红色滤镜 (J 切换)",
   "config.pvp_optimize.overlayColor": "滤镜颜色 (ARGB)",
   "config.pvp_optimize.overlayOpacity": "滤镜不透明度 (0% - 100%)",
+
+  "config.pvp_optimize.hidePlayerSkinLayers": "隐藏玩家多层皮肤 (jacket/袖子/裤腿)",
+  "config.pvp_optimize.transparentNametagBg":  "玩家名字背景透明 (保留文字)",
+
+
+
 
   "key.pvp_optimize.open_hud": "打开/关闭状态面板",
   "key.pvp_optimize.toggle_particles": "切换粒子过滤",

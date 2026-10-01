@@ -1,6 +1,5 @@
 package com.pvp.optimize.hud;
 
-import com.pvp.optimize.PvPOptimize;
 import com.pvp.optimize.PvPOptimizeConfig;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -10,14 +9,9 @@ import net.minecraft.text.Text;
 
 public final class OverlayHud {
 
-    private static boolean hudVisible = false;
-
     public static void register() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             PvPOptimizeConfig.Data cfg = PvPOptimizeConfig.get();
-            while (PvPOptimizeConfig.OPEN_HUD.wasPressed()) {
-                hudVisible = !hudVisible;
-            }
             while (PvPOptimizeConfig.TOGGLE_PARTICLES.wasPressed()) {
                 cfg.particlesEnabled = !cfg.particlesEnabled;
                 PvPOptimizeConfig.save();
@@ -41,56 +35,17 @@ public final class OverlayHud {
 
         PvPOptimizeConfig.Data cfg = PvPOptimizeConfig.get();
 
-        // 1. Full-screen red filter (红色滤镜) —— 总是渲染, 不受 hudVisible 控制
         if (cfg.redOverlayEnabled) {
             int w = mc.getWindow().getScaledWidth();
             int h = mc.getWindow().getScaledHeight();
-            int color = cfg.overlayColor;
             int alpha = (int) (cfg.overlayOpacity * 255.0f);
-            int argb = (alpha << 24) | (color & 0x00FFFFFF);
+            int argb = (alpha << 24) | (cfg.overlayColor & 0x00FFFFFF);
             ctx.fill(0, 0, w, h, argb);
         }
 
-        // H 关闭整个 HUD 群组 (状态面板 + 药水时间)
-        if (!hudVisible) return;
-
-        // 2. 状态面板 (左上)
-        int x = 4;
-        int y = 4;
-        int lineHeight = 12;
-        int padding = 4;
-
-        Text[] lines = {
-                Text.literal("PvP-Optimize"),
-                Text.literal("§e粒子过滤§r master: " + onOff(cfg.particlesEnabled)
-                        + "  §a战斗§r=" + onOff(cfg.particleCombat)
-                        + " §c伤害§r=" + onOff(cfg.particleDamage)
-                        + " §b药水§r=" + onOff(cfg.particlePotion)
-                        + " §6火焰§r=" + onOff(cfg.particleFire) + ")"),
-                Text.literal("\u00a7e\u5b9e\u4f53\u5256\u9664\u00a7r: " + onOff(cfg.entityCullingEnabled)
-                        + "  §7半径=" + ((int) cfg.cullDistance) + "格"),
-                Text.literal("\u00a7e\u836f\u6c34 HUD\u00a7r: " + onOff(cfg.potionHudEnabled) + "  \u00a77\u4f4d\u7f6e=" + cfg.potionHudPosition + " \u7f29\u653e=" + cfg.potionHudScale + "%"),
-                Text.literal("红色滤镜: " + onOff(cfg.redOverlayEnabled)
-                        + "  \u00a77\u900f\u660e\u5ea6=" + String.format("%.0f%%", cfg.overlayOpacity * 100)),
-        };
-
-        int width = 0;
-        for (Text t : lines) {
-            int w = mc.textRenderer.getWidth(t);
-            if (w > width) width = w;
-        }
-        int boxH = lines.length * lineHeight + padding * 2;
-
-        ctx.fill(x, y, x + width + padding * 2, y + boxH, 0x90000000);
-        for (int i = 0; i < lines.length; i++) {
-            ctx.drawText(mc.textRenderer, lines[i], x + padding, y + padding + i * lineHeight, 0xFFFFFFFF, false);
-        }
-
-        // 3. 药水时间面板 (右上) —— 同一 H 键控制
+        // 药水时间面板 (1.0.1 功能, 1.0.0 没有)
         if (cfg.potionHudEnabled) {
             PotionHudRenderer.render(ctx, mc);
         }
     }
-
-    private static String onOff(boolean b) { return b ? "开" : "关"; }
 }

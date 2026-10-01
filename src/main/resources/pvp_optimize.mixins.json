@@ -4,9 +4,10 @@
   "package": "com.pvp.optimize.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
-    "ParticleMixin",
     "ParticleManagerMixin",
-    "EntityRenderDispatcherMixin"
+    "EntityRenderDispatcherMixin",
+    "PlayerEntityModelMixin",
+    "EntityRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

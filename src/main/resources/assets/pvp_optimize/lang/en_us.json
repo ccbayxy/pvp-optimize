@@ -1,35 +1,25 @@
-{
+﻿{
   "config.pvp_optimize.title": "PvP-Optimize Settings",
-  "config.pvp_optimize.category.particles": "Particle Filter (Sodium style)",
+  "config.pvp_optimize.category.particles": "Particle Filter",
   "config.pvp_optimize.category.hud": "HUD (Potion Timers)",
   "config.pvp_optimize.category.culling": "Entity Culling",
   "config.pvp_optimize.category.overlay": "Screen Overlay",
+  "config.pvp_optimize.category.player":   "Player Rendering",
 
-  "config.pvp_optimize.particlesEnabled": "Enable particle filtering master switch",
-  "config.pvp_optimize.particlesEnabled.tooltip": "Default OFF. When off, this mod does NOT filter any particles.\\nSodium or vanilla renderer stays in control.\\nTurn ON only if you want fine-grained control per category.",
+  "config.pvp_optimize.particlesEnabled": "Enable particle filtering",
+  "config.pvp_optimize.particlesEnabled.tooltip": "Default OFF. When off, this mod does NOT filter any particles.\\nSodium or vanilla renderer stays in control.\\nTurn ON only if you want fine-grained control.",
 
-  "config.pvp_optimize.particleGroup.combat": "Combat Particles",
-  "config.pvp_optimize.particleGroup.world": "Blocks and Smoke",
-  "config.pvp_optimize.particleGroup.combatFx": "Combat FX",
-  "config.pvp_optimize.particleGroup.ambient": "Ambient Particles",
+  "config.pvp_optimize.keepCombatParticles": "Keep PvP combat particles",
+  "config.pvp_optimize.keepCombatParticles.tooltip": "Default ON. Always preserve sweep/crit/damage/note/portal particles (LIT + most OPAQUE).\\nTurn OFF to allow OPAQUE particles to be hidden by hideFireParticles.",
 
-  "config.pvp_optimize.particleCombat": "Crit / Sweep / Firework spark",
-  "config.pvp_optimize.particleCombat.tooltip": "Crit stars / sweep arcs / note block notes / angry villagers / firework sparks.",
-  "config.pvp_optimize.particleDamage": "Damage hearts",
-  "config.pvp_optimize.particleDamage.tooltip": "Hearts spawned when entities take damage.",
+  "config.pvp_optimize.hideBlockParticles": "Hide ambient particles",
+  "config.pvp_optimize.hideBlockParticles.tooltip": "Default ON. Hide all TRANSLUCENT sheet particles: potion bubbles / experience orbs / underwater bubbles / splash.",
 
-  "config.pvp_optimize.particleBlock": "Block break/place",
-  "config.pvp_optimize.particleSmoke": "Smoke / Campfire",
+  "config.pvp_optimize.hideFireParticles": "Hide fire particles",
+  "config.pvp_optimize.hideFireParticles.tooltip": "Default ON. Hide non-PvP OPAQUE particles (torch/furnace/lava ember/campfire).\\nNote: in 1.20.6, DamageParticle and FlameParticle are both OPAQUE with obfuscated class names.",
 
-  "config.pvp_optimize.particleExplosion": "TNT / Creeper explosion",
-  "config.pvp_optimize.particlePotion": "Potion effect / splash",
-
-  "config.pvp_optimize.particlePortal": "Portal particles",
-  "config.pvp_optimize.particleBubble": "Underwater bubbles",
-  "config.pvp_optimize.particleFirework": "Firework explosion",
-  "config.pvp_optimize.particleFire": "Torch / Furnace flame",
-  "config.pvp_optimize.particleAmbient": "Ambient (Sculk / Ash)",
-  "config.pvp_optimize.particleExperience": "Experience orb",
+  "config.pvp_optimize.particleRenderScale": "Render intensity (50%-200%)",
+  "config.pvp_optimize.particleRenderScale.tooltip": "Default 100% (no effect).\\nLower values randomly drop non-combat particles each frame.\\nWhen keepCombatParticles is ON, sweep/crit/damage particles are never dropped.",
 
   "config.pvp_optimize.potionHudEnabled": "Show potion timer panel (press H)",
   "config.pvp_optimize.potionHudPosition": "Panel position",
@@ -53,6 +43,9 @@
   "config.pvp_optimize.redOverlayEnabled": "Enable red overlay (press J)",
   "config.pvp_optimize.overlayColor": "Overlay color (ARGB)",
   "config.pvp_optimize.overlayOpacity": "Overlay opacity (0% - 100%)",
+
+  "config.pvp_optimize.hidePlayerSkinLayers": "Hide player skin layers (jacket/sleeves/pants)",
+  "config.pvp_optimize.transparentNametagBg":  "Transparent nametag background (keep text)",
 
   "key.pvp_optimize.open_hud": "Toggle status panel",
   "key.pvp_optimize.toggle_particles": "Toggle particle filter",
