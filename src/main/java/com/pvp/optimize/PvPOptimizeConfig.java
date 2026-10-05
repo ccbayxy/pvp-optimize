@@ -49,8 +49,11 @@ public final class PvPOptimizeConfig {
         // 头顶名字标签背景透明 (保留文字)
         public boolean transparentNametagBg = true;
         // 距离 LOD (1.0.4): 玩家超过该距离 (方块) 时隐藏皮肤层/名字标签, 0 表示禁用
-        public double hideSkinLayersDistance = 8.0;
-        public double hideNametagsDistance = 8.0;
+        public double hideSkinLayersDistance = 16.0;
+        public double hideNametagsDistance = 16.0;
+        // 群体隐身 (1.0.5): 6+ 玩家聚集 + fps 低于阈值 -> 隐藏皮肤层 (名字保留)
+        public int crowdPlayerThreshold = 6;
+        public double crowdFpsThreshold = 50.0;
 
         // ====== 药水时间 HUD (1.0.1 新增) ======
         public boolean potionHudEnabled = true;
@@ -97,8 +100,10 @@ public final class PvPOptimizeConfig {
                 DATA.overlayOpacity = loaded.overlayOpacity;
                 DATA.hidePlayerSkinLayers = loaded.hidePlayerSkinLayers;
                 DATA.transparentNametagBg  = loaded.transparentNametagBg;
-                DATA.hideSkinLayersDistance = loaded.hideSkinLayersDistance > 0 ? loaded.hideSkinLayersDistance : 8.0;
-                DATA.hideNametagsDistance   = loaded.hideNametagsDistance   > 0 ? loaded.hideNametagsDistance   : 8.0;
+                DATA.hideSkinLayersDistance = loaded.hideSkinLayersDistance > 0 ? loaded.hideSkinLayersDistance : 16.0;
+                DATA.hideNametagsDistance   = loaded.hideNametagsDistance   > 0 ? loaded.hideNametagsDistance   : 16.0;
+                DATA.crowdPlayerThreshold  = loaded.crowdPlayerThreshold > 0 ? loaded.crowdPlayerThreshold : 6;
+                DATA.crowdFpsThreshold     = loaded.crowdFpsThreshold > 0 ? loaded.crowdFpsThreshold : 50.0;
                 DATA.potionHudEnabled           = loaded.potionHudEnabled;
                 DATA.potionHudColorByCategory   = loaded.potionHudColorByCategory;
                 DATA.potionHudMaxLines          = loaded.potionHudMaxLines;

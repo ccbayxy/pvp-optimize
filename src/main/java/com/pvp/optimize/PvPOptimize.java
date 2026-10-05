@@ -1,6 +1,7 @@
 package com.pvp.optimize;
 
 import com.pvp.optimize.hud.OverlayHud;
+import com.pvp.optimize.perf.CrowdDetector;
 import net.fabricmc.api.ClientModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ public class PvPOptimize implements ClientModInitializer {
         PvPOptimizeConfig.register();
         // Then attach callbacks
         OverlayHud.register();
+        CrowdDetector.register();
         LOGGER.info("[PvP-Optimize] Initialized. Press H to toggle the status panel.");
     }
 }

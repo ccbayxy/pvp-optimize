@@ -204,7 +204,7 @@ public final class PvPOptimizeConfigScreen {
         player.addEntry(eb.startDoubleField(
                         Text.translatable("config.pvp_optimize.hideSkinLayersDistance"),
                         data.hideSkinLayersDistance)
-                .setDefaultValue(8.0)
+                .setDefaultValue(16.0)
                 .setMin(0.0).setMax(64.0)
                 .setSaveConsumer(v -> data.hideSkinLayersDistance = v)
                 .build());
@@ -217,9 +217,22 @@ public final class PvPOptimizeConfigScreen {
         player.addEntry(eb.startDoubleField(
                         Text.translatable("config.pvp_optimize.hideNametagsDistance"),
                         data.hideNametagsDistance)
-                .setDefaultValue(8.0)
+                .setDefaultValue(16.0)
                 .setMin(0.0).setMax(64.0)
                 .setSaveConsumer(v -> data.hideNametagsDistance = v)
+                .build());
+        player.addEntry(eb.startIntSlider(
+                        Text.translatable("config.pvp_optimize.crowdPlayerThreshold"),
+                        data.crowdPlayerThreshold, 3, 20)
+                .setDefaultValue(6)
+                .setSaveConsumer(v -> data.crowdPlayerThreshold = v)
+                .build());
+        player.addEntry(eb.startDoubleField(
+                        Text.translatable("config.pvp_optimize.crowdFpsThreshold"),
+                        data.crowdFpsThreshold)
+                .setDefaultValue(50.0)
+                .setMin(10.0).setMax(120.0)
+                .setSaveConsumer(v -> data.crowdFpsThreshold = v)
                 .build());
 
         // ============== 屏幕滤镜 ==============

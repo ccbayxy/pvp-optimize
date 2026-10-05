@@ -1,6 +1,7 @@
 package com.pvp.optimize.mixin;
 
 import com.pvp.optimize.PvPOptimizeConfig;
+import com.pvp.optimize.perf.CrowdDetector;
 import com.pvp.optimize.util.RenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.entity.model.PlayerEntityModel;
@@ -12,11 +13,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * 距离 LOD: 玩家超过 hideSkinLayersDistance 时隐藏多层皮肤 (jacket / sleeves / pants),
- * 保留装备/武器渲染 (ArmorFeatureRenderer 独立路径)。
+ * 皮肤层隐藏策略 (1.0.5):
  *
- * setVisible 拿不到当前渲染的 entity, 通过 RenderContext (由 EntityRenderer.render
- * 入口写入的 ThreadLocal) 获取。
+ *   - 默认: 玩家距离 > 16 格时隐藏多层皮肤 (保留装备/武器)
+ *   - 群体隐身: 32 格内 6+ 玩家 + 当前帧 fps 低于阈值 -> 隐藏皮肤层, 名字保留
+ *   - hidePlayerSkinLayers 开关关闭 -> 不走任何隐藏逻辑
+ *
+ * 装备 / 武器由 ArmorFeatureRenderer 独立路径渲染, 不受本 mixin 影响。
  */
 @Mixin(PlayerEntityModel.class)
 public abstract class PlayerEntityModelMixin {
@@ -33,7 +36,9 @@ public abstract class PlayerEntityModelMixin {
         PvPOptimizeConfig.Data cfg = PvPOptimizeConfig.get();
         if (!cfg.hidePlayerSkinLayers) return;
 
-        // 距离 LOD 检查
+        boolean shouldHide = false;
+
+        // 1) 距离 LOD: > 16 格默认隐藏
         if (cfg.hideSkinLayersDistance > 0.0) {
             net.minecraft.entity.Entity entity = RenderContext.get();
             if (entity instanceof PlayerEntity) {
@@ -42,13 +47,19 @@ public abstract class PlayerEntityModelMixin {
                     double distSq = mc.player.squaredDistanceTo(entity);
                     double maxDistSq = cfg.hideSkinLayersDistance * cfg.hideSkinLayersDistance;
                     if (distSq > maxDistSq) {
-                        return; // 距离超阈值, 啥也不做 (setVisible(true) 已经把基体 body 标 visible, 我们的图层保持原样)
+                        shouldHide = true;
                     }
                 }
             }
         }
 
-        // 距离内 (或开关关闭) -> 隐藏多层皮肤, 保留基体
+        // 2) 群体隐身: 6+ 玩家聚集 + 掉帧 -> 隐藏皮肤层 (名字仍保留)
+        if (!shouldHide && CrowdDetector.shouldHideSkinInCrowd(cfg.crowdPlayerThreshold, cfg.crowdFpsThreshold)) {
+            shouldHide = true;
+        }
+
+        if (!shouldHide) return;
+
         this.leftSleeve.visible  = false;
         this.rightSleeve.visible = false;
         this.leftPants.visible   = false;
