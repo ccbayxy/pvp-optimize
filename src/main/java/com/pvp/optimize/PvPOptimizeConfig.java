@@ -48,6 +48,9 @@ public final class PvPOptimizeConfig {
         public boolean hidePlayerSkinLayers = true;
         // 头顶名字标签背景透明 (保留文字)
         public boolean transparentNametagBg = true;
+        // 距离 LOD (1.0.4): 玩家超过该距离 (方块) 时隐藏皮肤层/名字标签, 0 表示禁用
+        public double hideSkinLayersDistance = 8.0;
+        public double hideNametagsDistance = 8.0;
 
         // ====== 药水时间 HUD (1.0.1 新增) ======
         public boolean potionHudEnabled = true;
@@ -94,6 +97,8 @@ public final class PvPOptimizeConfig {
                 DATA.overlayOpacity = loaded.overlayOpacity;
                 DATA.hidePlayerSkinLayers = loaded.hidePlayerSkinLayers;
                 DATA.transparentNametagBg  = loaded.transparentNametagBg;
+                DATA.hideSkinLayersDistance = loaded.hideSkinLayersDistance > 0 ? loaded.hideSkinLayersDistance : 8.0;
+                DATA.hideNametagsDistance   = loaded.hideNametagsDistance   > 0 ? loaded.hideNametagsDistance   : 8.0;
                 DATA.potionHudEnabled           = loaded.potionHudEnabled;
                 DATA.potionHudColorByCategory   = loaded.potionHudColorByCategory;
                 DATA.potionHudMaxLines          = loaded.potionHudMaxLines;

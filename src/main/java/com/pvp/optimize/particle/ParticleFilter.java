@@ -6,6 +6,9 @@ import net.minecraft.client.particle.SpriteBillboardParticle;
 import net.minecraft.client.texture.Sprite;
 
 import java.lang.reflect.Field;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+
 
 /**
  * 粒子过滤 v1.0.5
@@ -20,6 +23,15 @@ import java.lang.reflect.Field;
 public final class ParticleFilter {
 
     private ParticleFilter() {}
+
+    // ===== 类名查询缓存 (避免每粒子每帧调用 Class.getName() 分配新字符串) =====
+    private static final Map<Class<?>, String> NAME_CACHE = new ConcurrentHashMap<>();
+
+    private static String nameOf(Particle p) {
+        return NAME_CACHE.computeIfAbsent(p.getClass(), Class::getName);
+    }
+
+    
 
     // ===== intermediary 命名空间 (Fabric 默认) =====
     public static final String DAMAGE_PARTICLE_INTERMEDIARY   = "net.minecraft.class_657";   // DamageParticle
@@ -87,7 +99,7 @@ public final class ParticleFilter {
         if (!cfg.particlesEnabled) return true;
 
         try {
-            String name = particle.getClass().getName();
+            String name = nameOf(particle);
 
             // 1) 伤害红心 - DamageParticle
             if (name.equals(DAMAGE_PARTICLE_INTERMEDIARY) || name.equals(DAMAGE_PARTICLE_YARN)) {

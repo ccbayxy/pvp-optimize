@@ -191,6 +191,37 @@ public final class PvPOptimizeConfigScreen {
                 .setSaveConsumer(v -> data.cullDistance = v)
                 .build());
 
+        // ============== 玩家渲染 ==============
+        ConfigCategory player = builder.getOrCreateCategory(
+                Text.translatable("config.pvp_optimize.category.player"));
+
+        player.addEntry(eb.startBooleanToggle(
+                        Text.translatable("config.pvp_optimize.hidePlayerSkinLayers"),
+                        data.hidePlayerSkinLayers)
+                .setDefaultValue(true)
+                .setSaveConsumer(v -> data.hidePlayerSkinLayers = v)
+                .build());
+        player.addEntry(eb.startDoubleField(
+                        Text.translatable("config.pvp_optimize.hideSkinLayersDistance"),
+                        data.hideSkinLayersDistance)
+                .setDefaultValue(8.0)
+                .setMin(0.0).setMax(64.0)
+                .setSaveConsumer(v -> data.hideSkinLayersDistance = v)
+                .build());
+        player.addEntry(eb.startBooleanToggle(
+                        Text.translatable("config.pvp_optimize.transparentNametagBg"),
+                        data.transparentNametagBg)
+                .setDefaultValue(true)
+                .setSaveConsumer(v -> data.transparentNametagBg = v)
+                .build());
+        player.addEntry(eb.startDoubleField(
+                        Text.translatable("config.pvp_optimize.hideNametagsDistance"),
+                        data.hideNametagsDistance)
+                .setDefaultValue(8.0)
+                .setMin(0.0).setMax(64.0)
+                .setSaveConsumer(v -> data.hideNametagsDistance = v)
+                .build());
+
         // ============== 屏幕滤镜 ==============
         ConfigCategory overlay = builder.getOrCreateCategory(
                 Text.translatable("config.pvp_optimize.category.overlay"));
@@ -215,25 +246,6 @@ public final class PvPOptimizeConfigScreen {
                 .setDefaultValue(0.15f)
                 .setMin(0.0f).setMax(1.0f)
                 .setSaveConsumer(v -> data.overlayOpacity = v)
-                .build());
-
-        
-        // ============== 玩家渲染 (1.0.2 新增) ==============
-        ConfigCategory player = builder.getOrCreateCategory(
-                Text.translatable("config.pvp_optimize.category.player"));
-
-        player.addEntry(eb.startBooleanToggle(
-                        Text.translatable("config.pvp_optimize.hidePlayerSkinLayers"),
-                        data.hidePlayerSkinLayers)
-                .setDefaultValue(true)
-                .setSaveConsumer(v -> data.hidePlayerSkinLayers = v)
-                .build());
-
-        player.addEntry(eb.startBooleanToggle(
-                        Text.translatable("config.pvp_optimize.transparentNametagBg"),
-                        data.transparentNametagBg)
-                .setDefaultValue(true)
-                .setSaveConsumer(v -> data.transparentNametagBg = v)
                 .build());
 builder.setSavingRunnable(PvPOptimizeConfig::save);
 
