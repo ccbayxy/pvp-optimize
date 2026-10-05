@@ -234,6 +234,12 @@ public final class PvPOptimizeConfigScreen {
                 .setMin(10.0).setMax(120.0)
                 .setSaveConsumer(v -> data.crowdFpsThreshold = v)
                 .build());
+        player.addEntry(eb.startBooleanToggle(
+                        Text.translatable("config.pvp_optimize.hideFarEmptyPlayers"),
+                        data.hideFarEmptyPlayers)
+                .setDefaultValue(true)
+                .setSaveConsumer(v -> data.hideFarEmptyPlayers = v)
+                .build());
 
         // ============== 屏幕滤镜 ==============
         ConfigCategory overlay = builder.getOrCreateCategory(

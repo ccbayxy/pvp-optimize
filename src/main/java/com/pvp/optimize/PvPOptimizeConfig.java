@@ -54,6 +54,8 @@ public final class PvPOptimizeConfig {
         // 群体隐身 (1.0.5): 6+ 玩家聚集 + fps 低于阈值 -> 隐藏皮肤层 (名字保留)
         public int crowdPlayerThreshold = 6;
         public double crowdFpsThreshold = 50.0;
+        // 距离 LOD 强化 (1.0.6): 距离超阈值 + 玩家装备全空 -> 完全隐身 (整体不渲染)
+        public boolean hideFarEmptyPlayers = true;
 
         // ====== 药水时间 HUD (1.0.1 新增) ======
         public boolean potionHudEnabled = true;
@@ -104,6 +106,7 @@ public final class PvPOptimizeConfig {
                 DATA.hideNametagsDistance   = loaded.hideNametagsDistance   > 0 ? loaded.hideNametagsDistance   : 16.0;
                 DATA.crowdPlayerThreshold  = loaded.crowdPlayerThreshold > 0 ? loaded.crowdPlayerThreshold : 6;
                 DATA.crowdFpsThreshold     = loaded.crowdFpsThreshold > 0 ? loaded.crowdFpsThreshold : 50.0;
+                DATA.hideFarEmptyPlayers    = loaded.hideFarEmptyPlayers;
                 DATA.potionHudEnabled           = loaded.potionHudEnabled;
                 DATA.potionHudColorByCategory   = loaded.potionHudColorByCategory;
                 DATA.potionHudMaxLines          = loaded.potionHudMaxLines;
