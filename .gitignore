@@ -11,6 +11,9 @@ out/
 .project
 .settings/
 
+# 本地工具数据（工作记录、诊断缓存，含本机路径）
+.workbuddy/
+
 # 本地 jar（从 Modrinth 下载，应当本地装而不是传仓库）
 local-libs/
 
