@@ -18,6 +18,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.Text;
+import net.fabricmc.loader.api.FabricLoader;
 import org.lwjgl.glfw.GLFW;
 
 import java.nio.file.Path;
@@ -50,6 +51,31 @@ public final class ControlPanelScreen extends Screen implements CharInputBridge.
     private static final int[] WIN_H = {520, 600, 680};
 
     private static final int GAP = 8;
+
+    /** 版本号缓存：只读一次 fabric.mod.json，避免每帧查元数据。 */
+    private static String MOD_VERSION;
+
+    /**
+     * 当前 mod 版本，来源于 gradle.properties 的 {@code mod_version}
+     * （Gradle 注入到 fabric.mod.json 的 {@code version} 字段）。
+     *
+     * <p>以前这个字符串是硬编码在语言文件里的（{@code "… · v1.0.6-v1"}），
+     * 每次升版本都得同时改中英两份 lang，容易漏。现在统一从这里取。
+     */
+    private static String modVersion() {
+        if (MOD_VERSION == null) {
+            String v = "?";
+            try {
+                v = FabricLoader.getInstance().getModContainer("pvp_optimize")
+                        .map(c -> c.getMetadata().getVersion().getFriendlyString())
+                        .orElse("?");
+            } catch (Throwable ignored) {
+                // 元数据缺失（如某些开发环境）时退回 "?"，不影响界面
+            }
+            MOD_VERSION = v;
+        }
+        return MOD_VERSION;
+    }
 
     public static void open(String tab) {
         MinecraftClient mc = MinecraftClient.getInstance();
@@ -709,7 +735,7 @@ public final class ControlPanelScreen extends Screen implements CharInputBridge.
                     NeoUi.clip(textRenderer, player, accountX2 - accountX1 - 46),
                     accountX1 + 38, accountY1 + 11, NeoUi.TEXT);
             NeoUi.text(ctx, textRenderer,
-                    NeoUi.clip(textRenderer, NeoUi.tr("gui.pvp_optimize.sidebar.foot"),
+                    NeoUi.clip(textRenderer, NeoUi.tr("gui.pvp_optimize.sidebar.foot") + " · v" + modVersion(),
                             accountX2 - accountX1 - 46),
                     accountX1 + 38, accountY1 + 24, NeoUi.TEXT_FAINT);
             NeoUi.iconChevronRight(ctx, accountX2 - 12, accountY1 + 21, 8, NeoUi.TEXT_FAINT);

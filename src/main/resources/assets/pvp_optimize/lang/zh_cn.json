@@ -132,7 +132,7 @@
   "gui.pvp_optimize.group.main": "主控",
   "gui.pvp_optimize.group.settings": "优化设置",
   "gui.pvp_optimize.group.tools": "工具",
-  "gui.pvp_optimize.sidebar.foot": "H 主控板 · M Dango · v1.0.6-v1",
+  "gui.pvp_optimize.sidebar.foot": "H 主控板 · M Dango",
   "gui.pvp_optimize.search.hint": "搜索设置：名称 / 说明 / 分类",
   "gui.pvp_optimize.search.clear": "清除",
   "gui.pvp_optimize.search.count": "共",
