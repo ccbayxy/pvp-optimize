@@ -4,12 +4,13 @@
   "version": "${version}",
   "name": "PvP Optimize",
   "description": "PVP oriented optimization mod. Block particles, cull far entities, configurable HUD overlay.",
-  "authors": ["you"],
+  "authors": ["ccbayxy"],
   "contact": {
-    "homepage": "https://example.com",
-    "sources": "https://example.com"
+    "homepage": "https://github.com/ccbayxy/pvp-optimize",
+    "sources": "https://github.com/ccbayxy/pvp-optimize",
+    "issues": "https://github.com/ccbayxy/pvp-optimize/issues"
   },
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "icon": "assets/pvp_optimize/icon.png",
   "environment": "client",
   "entrypoints": {

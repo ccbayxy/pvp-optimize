@@ -1,4 +1,4 @@
-﻿{
+{
   "required": true,
   "minVersion": "0.8",
   "package": "com.pvp.optimize.mixin",
@@ -7,7 +7,14 @@
     "BillboardParticleMixin",
     "EntityRenderDispatcherMixin",
     "PlayerEntityModelMixin",
-    "EntityRendererMixin"
+    "EntityRendererMixin",
+    "BlockEntityRenderDispatcherMixin",
+    "LivingEntityRendererMixin",
+    "SoundSystemMixin",
+    "SpriteAtlasTextureMixin",
+    "ParticleAccessor",
+    "GameMenuScreenMixin",
+    "MusicTrackerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

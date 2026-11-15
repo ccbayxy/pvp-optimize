@@ -1,7 +1,10 @@
 package com.pvp.optimize.entity;
 
 import com.pvp.optimize.PvPOptimizeConfig;
+import com.pvp.optimize.perf.AdaptivePerformance;
+import com.pvp.optimize.perf.RuntimeGuard;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.TntEntity;
 import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.entity.boss.dragon.EnderDragonEntity;
 import net.minecraft.entity.passive.VillagerEntity;
@@ -29,7 +32,7 @@ import java.util.Set;
  * The whitelist is intentionally tiny because the mod is meant for the
  * MCPVP / crystal-pvp scene:
  *   - Player, Villager
- *   - Snowball, EnderPearl, Arrow
+ *   - Snowball, EnderPearl, Arrow, primed TNT
  *   - Smelted-mineral items (e.g. iron_ingot, gold_ingot, diamond, ...)
  *
  * Everything else (item frames, armor stands, paintings, hostile mobs,
@@ -57,8 +60,12 @@ public final class EntityFilter {
     /**
      * Returns true if the entity should be culled (i.e. *removed*) right now.
      */
+    private static final net.minecraft.entity.EquipmentSlot[] EQUIPMENT_SLOTS =
+            net.minecraft.entity.EquipmentSlot.values();
+
     public static boolean shouldCull(Entity entity) {
         if (!PvPOptimizeConfig.get().entityCullingEnabled) return false;
+        if (RuntimeGuard.shouldSkipEntityCulling()) return false;
 
         // Always keep the local player
         if (entity instanceof PlayerEntity) return false;
@@ -72,6 +79,10 @@ public final class EntityFilter {
         if (entity instanceof ExperienceBottleEntity) return false;
         if (entity instanceof EggEntity) return false;
 
+        // 已点燃的 TNT: 水晶/炮台 PvP 里必须始终可见 (引信计时、爆炸位置判定),
+        // 与距离无关, 一律保留。
+        if (entity instanceof TntEntity) return false;
+
         // Smelted-mineral item entity: keep regardless of distance.
         if (isMineralItem(entity)) return false;
 
@@ -82,6 +93,27 @@ public final class EntityFilter {
         // Everything else (item frames, armor stands, paintings, mobs,
         // hostile entities, animals, ...) is culled past the distance.
         return !isWithinRange(entity);
+    }
+
+    /**
+     * 距离 LOD 强化: 超过 hideSkinLayersDistance 且 6 个装备槽全空的玩家整体不渲染。
+     */
+    public static boolean shouldFullyHide(Entity entity) {
+        PvPOptimizeConfig.Data cfg = PvPOptimizeConfig.get();
+        if (!cfg.hideFarEmptyPlayers) return false;
+        if (cfg.hideSkinLayersDistance <= 0.0) return false;
+        if (!(entity instanceof PlayerEntity player)) return false;
+
+        net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
+        if (mc.player == null || player == mc.player) return false;
+
+        double maxDistSq = cfg.hideSkinLayersDistance * cfg.hideSkinLayersDistance;
+        if (mc.player.squaredDistanceTo(player) <= maxDistSq) return false;
+
+        for (net.minecraft.entity.EquipmentSlot slot : EQUIPMENT_SLOTS) {
+            if (!player.getEquippedStack(slot).isEmpty()) return false;
+        }
+        return true;
     }
 
     private static boolean isMineralItem(Entity entity) {
@@ -95,7 +127,10 @@ public final class EntityFilter {
         net.minecraft.client.MinecraftClient mc = net.minecraft.client.MinecraftClient.getInstance();
         if (mc.player == null) return true;
         double dist = mc.player.squaredDistanceTo(entity);
-        double max = PvPOptimizeConfig.get().cullDistance;
+        // 帧率自适应 + 内存/GC 压力自适应共同收缩保留半径。
+        // 旧版这里直接用原始 cullDistance, 导致两个自适应开关对实体剔除完全无效。
+        double max = PvPOptimizeConfig.get().cullDistance
+                * AdaptivePerformance.scale() * RuntimeGuard.distanceScale();
         return dist <= max * max;
     }
 }

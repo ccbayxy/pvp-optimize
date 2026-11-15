@@ -17,9 +17,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * 但每个粒子自己的 buildGeometry() 仍然会被调用 (这是 BillboardParticle 抽象方法)。
  * 因此这是与 Sodium 兼容的拦截点。
  *
- * 通过 ParticleFilter.shouldKeep() 判定哪些粒子应该保留, 黑名单直接 cancel。
- * shouldKeep 对任何无法识别的粒子都默认放行 (返回 true), 因此该 mixin 不会
- * 误屏蔽不认识的粒子, 最坏情况是不过滤。
+ * 两道门槛:
+ *   1) 类型白名单 ParticleFilter.shouldKeep() —— 原有机制, 保持不变
+ *   2) 距离剔除 + 每帧预算 ParticleFilter.allowRender() —— 1.1.0 新增, 独立叠加
+ *
+ * 粒子坐标通过 ParticleAccessor 读取（@Shadow 无法解析父类字段）。
  */
 @Mixin(BillboardParticle.class)
 public abstract class BillboardParticleMixin {
@@ -32,8 +34,17 @@ public abstract class BillboardParticleMixin {
                                                   float tickDelta,
                                                   CallbackInfo ci) {
         Particle self = (Particle) (Object) this;
-        // 默认 shouldKeep=true (放行), 只对明确黑名单返回 false (过滤)
+
+        // 1) 原有类型白名单：黑名单直接过滤
         if (!ParticleFilter.shouldKeep(self)) {
+            ci.cancel();
+            return;
+        }
+
+        // 2) 新增：距离门槛与每帧预算（白名单通过后才检查）
+        ParticleAccessor pos = (ParticleAccessor) self;
+        if (!ParticleFilter.allowRender(self, camera,
+                pos.pvpoptimize$getX(), pos.pvpoptimize$getY(), pos.pvpoptimize$getZ())) {
             ci.cancel();
         }
     }

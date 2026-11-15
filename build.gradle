@@ -27,6 +27,10 @@ dependencies {
     modImplementation files("local-libs/modmenu-10.0.0.jar", "local-libs/cloth-config-fabric-14.0.139.jar")
 
     // Gson is bundled by Fabric Loader so we do not need to add it.
+    // JLayer 1.0.1.4 (LGPL 2.1) decodes MP3. WAV uses javax.sound.sampled and
+    // OGG uses LWJGL's STBVorbis, both already present at runtime.
+    // Keep it as a local jar: this machine cannot reach Maven mirrors reliably.
+    implementation files("local-libs/jlayer-1.0.1.4.jar")
 }
 
 processResources {
@@ -53,4 +57,31 @@ jar {
     from("LICENSE") {
         rename { "${it}_${project.archivesBaseName}" }
     }
+    // Bundle JLayer's classes so the mod jar stays self-contained.
+    // They contain no Minecraft references, so remapJar simply leaves them alone.
+    from({ zipTree(file("local-libs/jlayer-1.0.1.4.jar")) }) {
+        exclude "META-INF/**"
+    }
+
+    // DangoMusic 官方 1.20.1 Fabric 客户端（v1.7.5），已剔除它自己的 fabric.mod.json /
+    // mixins.json / Fabric 入口与 mixin，并打了两处 1.20.6 兼容补丁：
+    //   - McCompat.renderMenuBackdrop 直接返回 false（1.20.6 的全景 render 签名已变）
+    //   - CompatScreen.mouseScrolled 改为 (DDDD)Z（1.20.6 增加水平滚轮参数）
+    // 里面是真正的 Dango 字节码：GLSL 液态玻璃 shader、Inter 字体、MusicScreen、
+    // DynamicIslandModule、SongCardModule，以及 relocated 的 Kotlin / JLayer / JOrbis / ZXing。
+    // 本项目只通过 DangoBridge 反射驱动它，不重写任何界面绘制代码。
+    from({ zipTree(file("local-libs/dangomusic-ui-1.7.5.jar")) }) {
+        // 保留 META-INF/licenses/**（Inter / JLayer / JOrbis / ZXing 的许可文本），
+        // 只去掉会和宿主 jar 冲突的清单、签名与 maven 元数据。
+        exclude "META-INF/MANIFEST.MF"
+        exclude "META-INF/versions/**"
+        exclude "META-INF/maven/**"
+        exclude "META-INF/*.kotlin_module"
+        exclude "META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA"
+    }
+    // DangoMusic 本体是 GPL-3.0，内置其字节码后整个 jar 按 GPL-3.0 交付，附全文
+    from(file("local-libs/DangoMusic-GPL-3.0.txt")) {
+        into "META-INF/licenses"
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

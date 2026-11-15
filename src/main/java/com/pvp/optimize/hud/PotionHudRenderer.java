@@ -1,7 +1,6 @@
 package com.pvp.optimize.hud;
 
 import com.pvp.optimize.PvPOptimizeConfig;
-import com.pvp.optimize.config.PvPOptimizeConfigScreen.HudPosition;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -9,25 +8,24 @@ import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.registry.Registries;
-import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
 /**
- * 药水时间 HUD (2026-09-27 v5).
+ * 药水时间 HUD：每行一个生效药水的名称 / 等级 / 倒计时。
  *
- * <p>在屏幕一角绘制半透明面板, 每行显示一个生效药水的名称/等级/倒计时.
- * showing the active effect name, level, and remaining duration.
+ * <p>位置与大小由 {@link HudLayout} 统一托管（可在 HUD 布局编辑器里拖动 / 滚轮缩放）。
+ * 绘制用矩阵 translate + scale，基准坐标从 (0,0) 起，彻底修掉旧版
+ * 「先按 scale 算屏幕坐标、再对矩阵 scale」造成的偏移与双重缩放。
  *
- * <pre>
- *   药水效果 (3)
- *   速度 II           01:34   ← 绿
- *   力量              02:15   ← 绿
- *   挖掘疲劳          00:45   ← 红
- * </pre>
+ * <p><b>性能</b>：旧实现每帧都 {@code new ArrayList} + 排序 + 逐行 {@code Text.literal}，
+ * 在 144Hz 下每秒产生上千个临时对象。现在改为「签名缓存」：每帧只遍历一次当前药水
+ * 计算一个 long 签名（零分配），签名不变就直接复用上一次的行与宽度；签名里包含
+ * 剩余秒数，所以倒计时跨秒时（每秒一次）才会真正重建。
  */
 public final class PotionHudRenderer {
 
@@ -35,7 +33,11 @@ public final class PotionHudRenderer {
 
     private static final int PADDING = 4;
     private static final int LINE_HEIGHT = 12;
-    private static final int SCREEN_MARGIN = 8;
+
+    // ===== 签名缓存 =====
+    private static long cacheSig = Long.MIN_VALUE;
+    private static List<Line> cacheLines;
+    private static int cacheW, cacheH;
 
     public static void render(DrawContext ctx, MinecraftClient mc) {
         if (mc.player == null) return;
@@ -43,15 +45,35 @@ public final class PotionHudRenderer {
         PvPOptimizeConfig.Data cfg = PvPOptimizeConfig.get();
         if (!cfg.potionHudEnabled) return;
 
-        List<StatusEffectInstance> effects = new ArrayList<>(
-                mc.player.getStatusEffects());
+        Collection<StatusEffectInstance> effects = mc.player.getStatusEffects();
+        if (effects.isEmpty()) return;   // 默认无药水时隐藏
 
-        if (effects.isEmpty()) {
-            if (cfg.potionHudHideWhenEmpty) return;
-            // Otherwise show empty title: user likely wants default hide, just exit
-            return;
+        long sig = signature(effects, cfg);
+        if (sig != cacheSig || cacheLines == null) {
+            rebuild(effects, cfg, mc.textRenderer);
+            cacheSig = sig;
         }
+        if (cacheLines.isEmpty()) return;
 
+        HudLayout.Rect rect = HudLayout.resolve(HudLayout.Id.POTION, mc, cfg, cacheW, cacheH);
+        renderAt(ctx, mc, cfg, rect, cacheLines, cacheW, cacheH);
+    }
+
+    /** HUD 布局编辑器用的示例面板（不依赖当前是否真的有药水效果）。 */
+    public static void renderPreview(DrawContext ctx, MinecraftClient mc,
+                                     PvPOptimizeConfig.Data cfg, HudLayout.Rect rect) {
+        List<Line> lines = List.of(
+                new Line("\u00a76\u00a7l\u836f\u6c34\u6548\u679c\u00a7r\u00a76 (2)",
+                        cfg.potionHudTitleColor),
+                new Line("\u901f\u5ea6 II  01:34", cfg.potionHudBeneficialColor),
+                new Line("\u529b\u91cf  02:15", cfg.potionHudBeneficialColor));
+        int[] size = measure(mc.textRenderer, lines);
+        renderAt(ctx, mc, cfg, rect, lines, size[0], size[1]);
+    }
+
+    private static void rebuild(Collection<StatusEffectInstance> source,
+                                PvPOptimizeConfig.Data cfg, TextRenderer font) {
+        List<StatusEffectInstance> effects = new ArrayList<>(source);
         effects.sort(Comparator
                 .comparingInt((StatusEffectInstance i) -> categoryOrder(i.getEffectType().value().getCategory()))
                 .thenComparingInt(StatusEffectInstance::getDuration));
@@ -60,86 +82,78 @@ public final class PotionHudRenderer {
         if (maxLines > 0 && effects.size() > maxLines) {
             effects = effects.subList(0, maxLines);
         }
+        List<Line> lines = buildLines(effects, cfg);
+        int[] size = measure(font, lines);
+        cacheLines = lines;
+        cacheW = size[0];
+        cacheH = size[1];
+    }
 
-        // 构建行
-        List<Line> lines = new ArrayList<>();
+    /** 零分配签名：药水集合 + 等级 + 剩余秒数 + 影响排版/颜色的配置。 */
+    private static long signature(Collection<StatusEffectInstance> effects,
+                                  PvPOptimizeConfig.Data cfg) {
+        long sig = 0x9E3779B97F4A7C15L * (effects.size() + 1)
+                + cfg.potionHudMaxLines * 131L
+                + (cfg.potionHudShowTitle ? 1 : 0) * 17L
+                + (cfg.potionHudShowAmplifier ? 1 : 0) * 31L
+                + (cfg.potionHudShowDuration ? 1 : 0) * 61L
+                + (cfg.potionHudColorByCategory ? 1 : 0) * 97L
+                + cfg.potionHudTitleColor * 7L
+                + cfg.potionHudBeneficialColor * 11L
+                + cfg.potionHudHarmfulColor * 13L
+                + cfg.potionHudNeutralColor * 19L;
+        for (StatusEffectInstance inst : effects) {
+            sig = sig * 0x100000001B3L
+                    + System.identityHashCode(inst.getEffectType().value())
+                    + inst.getAmplifier() * 1_000_003L
+                    + (inst.getDuration() / 20) * 7_919L;
+        }
+        return sig;
+    }
+
+    private static List<Line> buildLines(List<StatusEffectInstance> effects,
+                                         PvPOptimizeConfig.Data cfg) {
+        List<Line> lines = new ArrayList<>(effects.size() + 1);
         if (cfg.potionHudShowTitle) {
-            lines.add(new Line(
-                    Text.literal("\u00a76\u00a7l\u836f\u6c34\u6548\u679c\u00a7r\u00a76 (" + effects.size() + ")"),
-                    cfg.potionHudTitleColor));
+            lines.add(new Line("\u00a76\u00a7l\u836f\u6c34\u6548\u679c\u00a7r\u00a76 ("
+                    + effects.size() + ")", cfg.potionHudTitleColor));
         }
         for (StatusEffectInstance inst : effects) {
             int color = cfg.potionHudColorByCategory
                     ? colorForCategory(inst.getEffectType().value().getCategory(), cfg)
                     : cfg.potionHudNeutralColor;
-
             StringBuilder sb = new StringBuilder();
             sb.append(effectName(inst));
-            if (cfg.potionHudShowAmplifier) {
-                sb.append(ampStr(inst.getAmplifier()));
-            }
-            if (cfg.potionHudShowDuration) {
-                sb.append("  ").append(formatDuration(inst.getDuration()));
-            }
-            lines.add(new Line(Text.literal(sb.toString()), color));
+            if (cfg.potionHudShowAmplifier) sb.append(ampStr(inst.getAmplifier()));
+            if (cfg.potionHudShowDuration) sb.append("  ").append(formatDuration(inst.getDuration()));
+            lines.add(new Line(sb.toString(), color));
         }
-
-        // 计算面板原始尺寸
-        TextRenderer font = mc.textRenderer;
-        int textW = 0;
-        for (Line l : lines) textW = Math.max(textW, font.getWidth(l.text));
-        int panelW = textW + PADDING * 2;
-        int panelH = lines.size() * LINE_HEIGHT + PADDING * 2;
-
-        // 计算缩放
-        float scale = cfg.potionHudScale / 100.0f;
-        if (scale != 1.0f) {
-            // 缩放: 通过 matrix 实现
-            ctx.getMatrices().push();
-            ctx.getMatrices().scale(scale, scale, 1.0f);
-            renderPanel(ctx, mc, lines, panelW, panelH, scale);
-            ctx.getMatrices().pop();
-        } else {
-            renderPanel(ctx, mc, lines, panelW, panelH, 1.0f);
-        }
+        return lines;
     }
 
-    private static void renderPanel(DrawContext ctx, MinecraftClient mc,
-                                    List<Line> lines, int panelW, int panelH, float scale) {
-        PvPOptimizeConfig.Data cfg = PvPOptimizeConfig.get();
+    private static int[] measure(TextRenderer font, List<Line> lines) {
+        int textW = 0;
+        for (Line l : lines) textW = Math.max(textW, font.getWidth(l.text));
+        return new int[]{textW + PADDING * 2, lines.size() * LINE_HEIGHT + PADDING * 2};
+    }
 
-        int screenW = mc.getWindow().getScaledWidth();
-        int screenH = mc.getWindow().getScaledHeight();
+    private static void renderAt(DrawContext ctx, MinecraftClient mc,
+                                 PvPOptimizeConfig.Data cfg, HudLayout.Rect rect,
+                                 List<Line> lines, int panelW, int panelH) {
+        ctx.getMatrices().push();
+        ctx.getMatrices().translate(rect.x, rect.y, 0);
+        ctx.getMatrices().scale(rect.scale, rect.scale, 1.0f);
 
-        HudPosition pos;
-        try {
-            pos = HudPosition.valueOf(cfg.potionHudPosition);
-        } catch (IllegalArgumentException e) {
-            pos = HudPosition.TOP_RIGHT;
-        }
-
-        // 屏幕坐标 (scaled). 把边距也按 scale 缩放
-        int scaledMargin = Math.round(SCREEN_MARGIN * scale);
-        int x, y;
-        switch (pos) {
-            case TOP_LEFT -> { x = scaledMargin; y = scaledMargin; }
-            case TOP_RIGHT -> { x = screenW - (int)(panelW * scale) - scaledMargin; y = scaledMargin; }
-            case BOTTOM_LEFT -> { x = scaledMargin; y = screenH - (int)(panelH * scale) - scaledMargin; }
-            case BOTTOM_RIGHT -> { x = screenW - (int)(panelW * scale) - scaledMargin; y = screenH - (int)(panelH * scale) - scaledMargin; }
-            default -> { x = screenW - (int)(panelW * scale) - scaledMargin; y = scaledMargin; }
-        }
-
-        // 背景: 根据 bgOpacity 调整 A
         int bgColor = (cfg.potionHudBgColor & 0x00FFFFFF)
-                | ((int)(cfg.potionHudBgOpacity * 2.55f) << 24);
-        ctx.fill(x, y, x + (int)(panelW * scale), y + (int)(panelH * scale), bgColor);
+                | ((int) (cfg.potionHudBgOpacity * 2.55f) << 24);
+        ctx.fill(0, 0, panelW, panelH, bgColor);
 
         for (int i = 0; i < lines.size(); i++) {
             Line l = lines.get(i);
-            int ly = y + Math.round((PADDING + i * LINE_HEIGHT) * scale);
-            int lx = x + Math.round(PADDING * scale);
-            ctx.drawText(mc.textRenderer, l.text, lx, ly, l.color, false);
+            ctx.drawText(mc.textRenderer, l.text, PADDING, PADDING + i * LINE_HEIGHT,
+                    l.color, false);
         }
+        ctx.getMatrices().pop();
     }
 
     // ============ helpers ============
@@ -187,11 +201,15 @@ public final class PotionHudRenderer {
         int hours = totalSec / 3600;
         int mins = (totalSec % 3600) / 60;
         int secs = totalSec % 60;
-        if (hours > 0) {
-            return String.format("%d:%02d:%02d", hours, mins, secs);
-        }
+        if (hours > 0) return String.format("%d:%02d:%02d", hours, mins, secs);
         return String.format("%02d:%02d", mins, secs);
     }
 
-    private record Line(Text text, int color) {}
+    /** 清缓存（切换语言 / 世界重载时调用）。 */
+    public static void invalidate() {
+        cacheSig = Long.MIN_VALUE;
+        cacheLines = null;
+    }
+
+    private record Line(String text, int color) {}
 }
