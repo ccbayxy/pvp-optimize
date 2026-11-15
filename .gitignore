@@ -24,12 +24,17 @@ Thumbs.db
 
 # 调试/备份/计划文件 (2026-09-27 清理)
 backup_fix_*/
+backup_*/
+tmp_reconstruct/
+tmp*/
+tmpglow/
 .trae/
 Inspect.java
 Ex.java
 EAll.java
 VJar.java
 *.PNG
+*.bak
 
 # 资源包 (PVP 材质包等) - 统一前缀匹配, 含中文/特殊字符的文件夹
 [1.20.5-1.20.6]*
