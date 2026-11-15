@@ -1,0 +1,15 @@
+# 换行符规范：保证 Windows 上检查出的仓库在任何平台都能直接用
+* text=auto
+
+# Gradle wrapper 的 Unix 脚本必须是 LF，否则 Linux/macOS 上是 "bad interpreter"
+gradlew text eol=lf
+*.sh text eol=lf
+
+# Windows 批处理必须是 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制，别做换行转换
+*.jar binary
+*.png binary
+*.zip binary

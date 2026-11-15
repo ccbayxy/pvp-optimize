@@ -33,13 +33,15 @@ Inspect.java
 Ex.java
 EAll.java
 VJar.java
-*.PNG
+# 截图：不要写成 *.PNG —— Windows 上 core.ignorecase=true，大写通配会连
+# src/main/resources/assets/pvp_optimize/icon.png 一起忽略掉
+/捕获.PNG
 *.bak
 
-# 资源包 (PVP 材质包等) - 统一前缀匹配, 含中文/特殊字符的文件夹
-[1.20.5-1.20.6]*
-[1.20.5-1.20.6]*/
-"[1.20.5-1.20.6]*
+# 资源包 (PVP 材质包等)
+# 注意：方括号必须转义。写成 [1.20.5-1.20.6]* 会被当成字符类，
+# 等于「以 1/2/0/5/6/./- 开头的一切」，会误伤 .gitattributes 之类的文件。
+\[1.20.5-1.20.6\]*
 *.zip
 *.7z
 *.rar
